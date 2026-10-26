@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Peta Survei Pantai Cemara</title>
+<title>Peta Survei</title>
 <meta name="description" content="Pemetaan lapangan ala surveyor: titik, jalur, dan area habitat dengan foto lokasi, peta offline, koordinat UTM, dan ekspor SHP/KMZ/GeoJSON.">
 <meta name="theme-color" content="#0f2a33">
 <link rel="manifest" href="manifest.webmanifest">
@@ -241,7 +241,7 @@ details.guide ol { padding-left: 20px; margin: 8px 0; display: flex; flex-direct
 </svg>
 
 <header class="topbar">
-  <h1 id="title">Peta Survei<span class="sub" id="projName">KEE Mangrove Pantai Cemara</span></h1>
+  <h1 id="title">Peta Survei<span class="sub" id="projName">Pemetaan lapangan</span></h1>
   <button class="gpschip" id="gpsChip" type="button" aria-label="Status GPS"><span class="gdot"></span><span id="gpsTxt">GPS</span></button>
   <span class="netdot" id="netDot" title="Status jaringan"></span>
   <button class="iconbtn" id="themeBtn" type="button" aria-label="Ganti tema">Tema</button>
@@ -341,13 +341,13 @@ const ANCAMAN = [['SM', 'Sampah'], ['AB', 'Abrasi'], ['KV', 'Konversi lahan'], [
 const TIPE = { point: 'Titik', line: 'Garis', area: 'Area' };
 const PREFIX = { point: 'P', line: 'G', area: 'A' };
 const ICON = { point: 'i-pt', line: 'i-line', area: 'i-area' };
-const DEFAULT_VIEW = { lat: -1.17, lon: 104.37, z: 12 };
+const DEFAULT_VIEW = { lat: -2.5, lon: 118, z: 5 };   // seluruh Indonesia; peta pindah ke posisi GPS saat pertama kali terkunci
 
 /* ================= Penyimpanan ================= */
 const KEY = 'peta-survei-v1';
 let S = load();
-function blank() { return { v: 1, profile: { nama: '', proyek: 'KEE Mangrove Pantai Cemara' }, features: {}, seq: { point: 0, line: 0, area: 0 }, layers: [{ id: 'L1', name: 'Lapisan 1', visible: true }], activeLayer: 'L1' }; }
-function load() { try { const r = localStorage.getItem(KEY); if (r) { const o = Object.assign(blank(), JSON.parse(r)); o.profile = Object.assign(blank().profile, o.profile); fixLayers(o); return o; } } catch (e) {} return blank(); }
+function blank() { return { v: 1, profile: { nama: '', proyek: '' }, features: {}, seq: { point: 0, line: 0, area: 0 }, layers: [{ id: 'L1', name: 'Lapisan 1', visible: true }], activeLayer: 'L1' }; }
+function load() { try { const r = localStorage.getItem(KEY); if (r) { const o = Object.assign(blank(), JSON.parse(r)); o.profile = Object.assign(blank().profile, o.profile); if (o.profile.proyek === 'KEE Mangrove Pantai Cemara') o.profile.proyek = ''; fixLayers(o); return o; } } catch (e) {} return blank(); }
 /* Lapisan objek (seperti "layer" di Avenza): objek lama tanpa lapisan otomatis masuk lapisan pertama. */
 function fixLayers(o) {
   if (!Array.isArray(o.layers) || !o.layers.length) o.layers = blank().layers;
@@ -1040,7 +1040,7 @@ function renderSheet() {
       ${S.layers.length > 1 ? `<div class="field w"><span class="lbl">Lapisan</span>${chipsHTML('layer', S.layers.map(l => [l.id, l.name]), layerOf(f), false)}</div>` : ''}
       <div class="field w"><span class="lbl">Habitat</span>${chipsHTML('habitat', HABITAT, f.habitat, false, true)}</div>
       <div class="field"><label for="f-kode">Kode</label><input type="text" id="f-kode" data-k="kode" value="${esc(f.kode)}"></div>
-      <div class="field"><label for="f-nama">Nama lokasi</label><input type="text" id="f-nama" data-k="nama" value="${esc(f.nama || '')}" placeholder="mis. Muara Sungai Cemara"></div>
+      <div class="field"><label for="f-nama">Nama lokasi</label><input type="text" id="f-nama" data-k="nama" value="${esc(f.nama || '')}" placeholder="mis. Muara sungai, Blok A"></div>
       <div class="field w"><span class="lbl">Kondisi habitat</span>${chipsHTML('kondisi', KONDISI, f.kondisi, false)}</div>
       <div class="field w"><span class="lbl">Ancaman / gangguan</span>${chipsHTML('ancaman', ANCAMAN, f.ancaman, true)}</div>
       <div class="field w"><label for="f-veg">Vegetasi / jenis dominan</label><input type="text" id="f-veg" data-k="vegetasi" value="${esc(f.vegetasi)}" placeholder="mis. Avicennia, Rhizophora, Ipomoea"></div>
@@ -1310,7 +1310,7 @@ async function renderData() {
     <section class="section"><h2>Pasang aplikasi</h2>${installSectionHTML()}</section>
     <section class="section"><h2>Proyek</h2>
       <div class="fields">
-        <div class="field w"><label for="p-proyek">Nama proyek / kawasan</label><input type="text" id="p-proyek" value="${esc(S.profile.proyek)}"></div>
+        <div class="field w"><label for="p-proyek">Nama kegiatan / kawasan</label><input type="text" id="p-proyek" value="${esc(S.profile.proyek)}" placeholder="mis. Survei Mangrove Desa Sungai Cemara 2026"></div>
         <div class="field w"><label for="p-nama">Nama surveyor</label><input type="text" id="p-nama" value="${esc(S.profile.nama)}"></div>
         <div class="field w"><span class="lbl">Format koordinat</span><div class="chips">${FMT.map(k => `<button type="button" class="chip" data-fmt="${k}" aria-pressed="${coordFmt === k}">${esc(FMT_LABEL[k])}</button>`).join('')}</div></div>
       </div></section>
@@ -1346,7 +1346,7 @@ async function renderData() {
 const dataPage = $('dataPage');
 dataPage.addEventListener('input', ev => {
   if (ev.target.id === 'p-nama') { S.profile.nama = ev.target.value; saveSoon(); }
-  if (ev.target.id === 'p-proyek') { S.profile.proyek = ev.target.value; $('projName').textContent = S.profile.proyek; saveSoon(); }
+  if (ev.target.id === 'p-proyek') { S.profile.proyek = ev.target.value; $('projName').textContent = S.profile.proyek || 'Pemetaan lapangan'; saveSoon(); }
 });
 dataPage.addEventListener('change', ev => { if (ev.target.id === 'withPhotos') setPref('zipfoto', ev.target.checked); });
 dataPage.addEventListener('click', async ev => {
@@ -1408,7 +1408,7 @@ function toGPX() {
   const fs = sorted();
   const wpt = fs.filter(f => f.type === 'point').map(f => `  <wpt lat="${f.coords[0]}" lon="${f.coords[1]}"><time>${new Date(f.t * 1000).toISOString()}</time><name>${esc(f.kode)}</name><desc>${esc(habLabel(f.habitat))}${f.nama ? ' – ' + esc(f.nama) : ''}</desc></wpt>`).join('\n');
   const trk = fs.filter(f => f.type !== 'point').map(f => `  <trk><name>${esc(f.kode)}</name><desc>${esc(TIPE[f.type])} – ${esc(habLabel(f.habitat))}</desc><trkseg>\n${f.coords.map(p => `    <trkpt lat="${p[0]}" lon="${p[1]}">${p[3] ? `<time>${new Date(p[3] * 1000).toISOString()}</time>` : ''}</trkpt>`).join('\n')}\n  </trkseg></trk>`).join('\n');
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Peta Survei Pantai Cemara" xmlns="http://www.topografix.com/GPX/1/1">\n${wpt}\n${trk}\n</gpx>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="Peta Survei" xmlns="http://www.topografix.com/GPX/1/1">\n${wpt}\n${trk}\n</gpx>\n`;
 }
 function kmlColor(hex, a) { const h = hex.replace('#', ''); return a + h.slice(4, 6) + h.slice(2, 4) + h.slice(0, 2); }
 function toKML(withImgs) {
@@ -2103,7 +2103,7 @@ window.addEventListener('beforeunload', ev => { if (REC) { save(); ev.preventDef
 
 /* ================= Mulai ================= */
 (async () => {
-  applyTheme(); updateNet(); $('projName').textContent = S.profile.proyek || 'Peta Survei';
+  applyTheme(); updateNet(); $('projName').textContent = S.profile.proyek || 'Pemetaan lapangan';
   MAPS = await pdbAll('maps').catch(() => []);
   setBase(base.kind);
   drawAll(); drawRefs(false); startWatch(); updateHud();
