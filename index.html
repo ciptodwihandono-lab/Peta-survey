@@ -360,6 +360,15 @@ let saveTimer = null;
 function save() { clearTimeout(saveTimer); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('Gagal menyimpan: memori browser penuh. Ekspor data lalu hapus objek lama.'); } }
 function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(save, 250); }
 window.addEventListener('pagehide', save);
+/* Aplikasi terbuka di dua tempat (mis. aplikasi terpasang dan tab Chrome): bila tempat lain menyimpan,
+   muat data terbarunya di sini juga, agar salinan lama di sini tidak menimpa data yang lebih baru. */
+window.addEventListener('storage', ev => {
+  if (ev.key !== KEY || !ev.newValue) return;
+  clearTimeout(saveTimer); S = load(); drawAll();
+  if (SHEET && !S.features[SHEET]) closeSheet();
+  const a = document.activeElement;
+  if (!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) { if (currentTab === 'list') renderList(); else if (currentTab === 'data') renderData(); }
+});
 document.addEventListener('visibilitychange', () => { if (document.hidden) save(); });
 try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
 const pref = (k, d) => { try { const v = localStorage.getItem('peta-survei-' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } };
@@ -1308,6 +1317,10 @@ async function renderData() {
   const refs = await pdbAll('ref').catch(() => []);
   $('dataPage').innerHTML = `
     <section class="section"><h2>Pasang aplikasi</h2>${installSectionHTML()}</section>
+    <section class="section"><h2>Aplikasi lain</h2>
+      <a class="btn ghost block" href="https://ciptodwihandono-lab.github.io/deha/" target="_blank" rel="noopener">Buka Survei Cemara (formulir survei KEHATI)</a>
+      <p class="note">Aplikasi terpisah dengan ikonnya sendiri; pasang juga dari tab Data di dalamnya.</p>
+    </section>
     <section class="section"><h2>Proyek</h2>
       <div class="fields">
         <div class="field w"><label for="p-proyek">Nama kegiatan / kawasan</label><input type="text" id="p-proyek" value="${esc(S.profile.proyek)}" placeholder="mis. Survei Mangrove Desa Sungai Cemara 2026"></div>
