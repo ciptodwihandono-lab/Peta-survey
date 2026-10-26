@@ -80,7 +80,7 @@ main { flex: 1; min-height: 0; position: relative; }
 #mapView { overflow: hidden; }
 #map { position: absolute; inset: 0; background: var(--surface-2); z-index: 0; }  /* konteks tumpukan sendiri: kontrol Leaflet tetap di bawah panel aplikasi */
 
-nav.tabs { flex: none; background: var(--surface); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(3, 1fr); padding-bottom: env(safe-area-inset-bottom, 0px); z-index: 1001; }
+nav.tabs { flex: none; background: var(--surface); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(4, 1fr); padding-bottom: env(safe-area-inset-bottom, 0px); z-index: 1001; }
 nav.tabs button { background: none; border: 0; padding: 7px 4px 8px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 12px; color: var(--muted); cursor: pointer; min-height: 54px; }
 nav.tabs button[aria-current="page"] { color: var(--accent); font-weight: 650; }
 
@@ -190,6 +190,31 @@ details.guide ol { padding-left: 20px; margin: 8px 0; display: flex; flex-direct
 .viewer .vbar .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .viewer .vbar button { background: none; color: #fff; border: 1px solid rgba(255,255,255,.6); border-radius: 8px; padding: 8px 12px; font-weight: 650; cursor: pointer; }
 .viewer .vbar button.armed { background: #c0392b; border-color: #c0392b; }
+.mapcard { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-top: 1px solid var(--line); background: none; width: 100%; text-align: left; color: var(--fg); }
+.mapcard:first-child { border-top: 0; }
+.mapcard.on { background: var(--accent-soft); }
+.mapcard .th { width: 64px; height: 64px; border-radius: 9px; background: var(--surface-2); border: 1px solid var(--line); flex: none; overflow: hidden; display: grid; place-items: center; color: var(--muted); padding: 0; cursor: pointer; }
+.mapcard .th img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mapcard .main { flex: 1; min-width: 0; cursor: pointer; }
+.mapcard .t { font-weight: 650; overflow-wrap: anywhere; }
+.mapcard .s { font-size: 13px; color: var(--muted); }
+.mapcard .in { color: var(--good); font-weight: 650; }
+.mapcard .acts { display: flex; flex-direction: column; gap: 6px; flex: none; }
+.mapchip { background: var(--surface); color: var(--fg); border: 0; border-radius: 10px; box-shadow: var(--shadow); font-size: 12px; padding: 6px 10px; max-width: 100%; text-align: left; cursor: pointer; display: flex; flex-direction: column; }
+.mapchip b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mapchip .out { color: var(--bad); font-weight: 700; }
+.spanel { top: 10px; left: 10px; right: 10px; max-width: 460px; max-height: calc(100% - 90px); background: var(--surface); border-radius: 14px; box-shadow: 0 6px 22px rgba(0,0,0,.32); z-index: 950; display: flex; flex-direction: column; overflow: hidden; }
+.spanel .sbar { display: flex; gap: 8px; padding: 10px; border-bottom: 1px solid var(--line); }
+.spanel .sbar input { flex: 1; }
+.spanel .res { overflow: auto; display: flex; flex-direction: column; }
+.spanel .grp { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; padding: 10px 14px 4px; }
+.spanel .hit { display: flex; gap: 10px; align-items: center; padding: 10px 14px; border: 0; border-top: 1px solid var(--line); background: none; text-align: left; width: 100%; cursor: pointer; color: var(--fg); }
+.spanel .hit .main { flex: 1; min-width: 0; } .spanel .hit .t { font-weight: 650; overflow-wrap: anywhere; } .spanel .hit .s { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.spanel .msg { padding: 12px 14px; font-size: 13px; color: var(--muted); }
+.lyrrow { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); }
+.lyrrow:first-child { border-top: 0; }
+.lyrrow input[type=checkbox], .lyrrow input[type=radio] { width: 22px; height: 22px; accent-color: var(--accent); flex: none; }
+.lyrrow .main { flex: 1; min-width: 0; } .lyrrow .t { font-weight: 600; overflow-wrap: anywhere; } .lyrrow .s { font-size: 12px; color: var(--muted); }
 .toast { position: fixed; left: 50%; bottom: calc(150px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; z-index: 3000; max-width: calc(100% - 32px); box-shadow: 0 4px 14px rgba(0,0,0,.2); }
 @media (max-width: 400px) { .fields { grid-template-columns: 1fr; } .stats { grid-template-columns: 1fr 1fr; } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
@@ -210,6 +235,8 @@ details.guide ol { padding-left: 20px; margin: 8px 0; display: flex; flex-direct
   <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 4v14M15 6v14" stroke="currentColor" stroke-width="2"/></symbol>
   <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13" stroke="currentColor" stroke-width="2"/><circle cx="4" cy="6" r="1.3" fill="currentColor"/><circle cx="4" cy="12" r="1.3" fill="currentColor"/><circle cx="4" cy="18" r="1.3" fill="currentColor"/></symbol>
   <symbol id="i-cam" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="m15.5 15.5 5 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-lib" viewBox="0 0 24 24"><path d="M4 5h7v14H4zM13 5h7v6h-7zM13 13h7v6h-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
   <symbol id="i-data" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 19h16" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
 </svg>
 
@@ -229,7 +256,8 @@ details.guide ol { padding-left: 20px; margin: 8px 0; display: flex; flex-direct
     <div id="map" aria-label="Peta"></div>
     <div class="crosshair" id="crosshair" hidden aria-hidden="true"><svg viewBox="0 0 44 44" width="44" height="44"><circle cx="22" cy="22" r="9" fill="none" stroke="#fff" stroke-width="4"/><circle cx="22" cy="22" r="9" fill="none" stroke="#e53935" stroke-width="2"/><path d="M22 2v12M22 30v12M2 22h12M30 22h12" stroke="#fff" stroke-width="4"/><path d="M22 2v12M22 30v12M2 22h12M30 22h12" stroke="#e53935" stroke-width="2"/></svg></div>
     <div class="float" id="tl">
-      <button type="button" class="fab" id="layersBtn" aria-label="Lapisan peta"><svg class="i"><use href="#i-layers"/></svg></button>
+      <div class="row" style="flex-wrap:nowrap"><button type="button" class="fab" id="layersBtn" aria-label="Lapisan peta"><svg class="i"><use href="#i-layers"/></svg></button><button type="button" class="fab" id="searchBtn" aria-label="Cari tempat, koordinat, atau objek"><svg class="i"><use href="#i-search"/></svg></button></div>
+      <button type="button" class="mapchip" id="mapChip" hidden></button>
       <details class="legend" id="legend"><summary>Legenda</summary><ul id="legendList"></ul></details>
     </div>
     <div class="float fabcol" id="rt">
@@ -248,6 +276,10 @@ details.guide ol { padding-left: 20px; margin: 8px 0; display: flex; flex-direct
       </div>
     </div>
     <div class="float lpanel" id="lpanel" hidden></div>
+    <div class="float spanel" id="spanel" hidden>
+      <div class="sbar"><input type="search" id="sq" placeholder="Cari objek, peta, koordinat, tempat" aria-label="Cari" autocomplete="off" enterkeyhint="search"><button type="button" class="btn ghost sm" id="sClose">Tutup</button></div>
+      <div class="res" id="sres"></div>
+    </div>
     <div class="float menu" id="addMenu" hidden>
       <button type="button" data-add="gps"><svg class="i"><use href="#i-sat"/></svg><span><b>Titik GPS (rata-rata)</b><span>Berdiri di lokasi; posisi dirata-rata dari beberapa bacaan GPS.</span></span></button>
       <button type="button" data-add="point"><svg class="i"><use href="#i-pt"/></svg><span><b>Titik di peta</b><span>Ketuk peta atau pakai tanda silang di tengah layar.</span></span></button>
@@ -261,11 +293,13 @@ details.guide ol { padding-left: 20px; margin: 8px 0; display: flex; flex-direct
       <button type="button" class="actbtn alt" id="trackBtn"><svg class="i"><use href="#i-rec"/></svg><span id="trackLbl">Rekam</span></button>
     </div>
   </section>
+  <section class="view" id="libView" hidden><div class="page" id="libPage"></div></section>
   <section class="view" id="listView" hidden><div class="page" id="listPage"></div></section>
   <section class="view" id="dataView" hidden><div class="page" id="dataPage"></div></section>
 </main>
 
 <nav class="tabs" id="tabs">
+  <button type="button" data-tab="lib"><svg class="i"><use href="#i-lib"/></svg>Peta Saya</button>
   <button type="button" data-tab="map"><svg class="i"><use href="#i-map"/></svg>Peta</button>
   <button type="button" data-tab="list"><svg class="i"><use href="#i-list"/></svg>Objek</button>
   <button type="button" data-tab="data"><svg class="i"><use href="#i-data"/></svg>Data</button>
@@ -312,8 +346,16 @@ const DEFAULT_VIEW = { lat: -1.17, lon: 104.37, z: 12 };
 /* ================= Penyimpanan ================= */
 const KEY = 'peta-survei-v1';
 let S = load();
-function blank() { return { v: 1, profile: { nama: '', proyek: 'KEE Mangrove Pantai Cemara' }, features: {}, seq: { point: 0, line: 0, area: 0 } }; }
-function load() { try { const r = localStorage.getItem(KEY); if (r) { const o = Object.assign(blank(), JSON.parse(r)); o.profile = Object.assign(blank().profile, o.profile); return o; } } catch (e) {} return blank(); }
+function blank() { return { v: 1, profile: { nama: '', proyek: 'KEE Mangrove Pantai Cemara' }, features: {}, seq: { point: 0, line: 0, area: 0 }, layers: [{ id: 'L1', name: 'Lapisan 1', visible: true }], activeLayer: 'L1' }; }
+function load() { try { const r = localStorage.getItem(KEY); if (r) { const o = Object.assign(blank(), JSON.parse(r)); o.profile = Object.assign(blank().profile, o.profile); fixLayers(o); return o; } } catch (e) {} return blank(); }
+/* Lapisan objek (seperti "layer" di Avenza): objek lama tanpa lapisan otomatis masuk lapisan pertama. */
+function fixLayers(o) {
+  if (!Array.isArray(o.layers) || !o.layers.length) o.layers = blank().layers;
+  if (!o.layers.some(l => l.id === o.activeLayer)) o.activeLayer = o.layers[0].id;
+}
+function layerOf(f) { return S.layers.some(l => l.id === f.layer) ? f.layer : S.layers[0].id; }
+function layerName(id) { const l = S.layers.find(x => x.id === id); return l ? l.name : ''; }
+function layerVisible(f) { const l = S.layers.find(x => x.id === layerOf(f)); return !l || l.visible !== false; }
 let saveTimer = null;
 function save() { clearTimeout(saveTimer); try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { toast('Gagal menyimpan: memori browser penuh. Ekspor data lalu hapus objek lama.'); } }
 function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(save, 250); }
@@ -450,6 +492,7 @@ function setBase(kind) {
     l.addTo(map); baseLayers.push(l);
   } else addOnline(kind);
   baseLayers.forEach((l, i) => { if (i === 0) l.bringToBack(); });
+  updateMapChip();
 }
 
 const featLayer = L.featureGroup().addTo(map);
@@ -464,6 +507,7 @@ function tooltipPermanent() { return showLabels && map.getZoom() >= 16; }
 function drawFeature(f) {
   if (layers[f.id]) { featLayer.removeLayer(layers[f.id]); delete layers[f.id]; }
   if (EDIT && EDIT.id === f.id) return;
+  if (!layerVisible(f)) return;
   const c = habColor(f.habitat);
   let ly;
   if (f.type === 'point') ly = L.circleMarker([f.coords[0], f.coords[1]], { radius: 9, color: '#fff', weight: 2.5, fillColor: c, fillOpacity: 1 });
@@ -510,6 +554,7 @@ function startWatch() {
 }
 function crossOn() { return !$('crosshair').hidden; }
 function updateHud() {
+  updateMapChip();
   if (crossOn()) { const c = map.getCenter(); $('hudL').textContent = 'Tanda silang (tengah peta)'; $('hudC').textContent = fmtCoord(c.lat, c.lng); return; }
   if (!me) { $('hudL').textContent = 'Posisi saya'; $('hudC').textContent = 'Menunggu GPS…'; return; }
   $('hudL').textContent = `Posisi saya · ±${me.acc} m${me.alt != null ? ` · tinggi ${Math.round(me.alt)} m` : ''}`;
@@ -524,7 +569,7 @@ map.on('dragstart', () => { if (follow) { follow = false; $('locBtn').setAttribu
 
 /* ================= Membuat objek ================= */
 function newFeature(type, coords, extra = {}) {
-  const f = { id: rid(), type, kode: nextKode(type), nama: '', habitat: '', kondisi: '', ancaman: [], vegetasi: '', deskripsi: '', catatan: '',
+  const f = { id: rid(), type, layer: S.activeLayer, kode: nextKode(type), nama: '', habitat: '', kondisi: '', ancaman: [], vegetasi: '', deskripsi: '', catatan: '',
     coords, t: Math.round(Date.now() / 1000), by: S.profile.nama || '', updated: Date.now(), ...extra };
   S.features[f.id] = f; save(); drawFeature(f); renderLegend();
   return f;
@@ -547,9 +592,9 @@ function quickPoint() {
   if (fresh) map.setView([f.coords[0], f.coords[1]], Math.max(map.getZoom(), 17));
   return f;
 }
-function closeFloating() { addMenu.hidden = true; $('lpanel').hidden = true; }
+function closeFloating() { addMenu.hidden = true; $('lpanel').hidden = true; $('spanel').hidden = true; }
 $('addBtn').addEventListener('click', () => { if (DRAW || REC || EDIT) return; const open = addMenu.hidden; closeFloating(); addMenu.hidden = !open; });
-map.on('click', ev => { if (!addMenu.hidden || !$('lpanel').hidden) { closeFloating(); return; } if (DRAW || EDIT) onMapTap(ev); });
+map.on('click', ev => { if (!addMenu.hidden || !$('lpanel').hidden || !$('spanel').hidden) { closeFloating(); return; } if (DRAW || EDIT) onMapTap(ev); });
 addMenu.addEventListener('click', ev => { const b = ev.target.closest('[data-add]'); if (!b) return; addMenu.hidden = true; if (b.dataset.add === 'gps') gpsAverage(); else startDraw(b.dataset.add); });
 
 /* Titik GPS rata-rata: bacaan berbobot 1/akurasi²; bacaan > 20 m diabaikan bila ada yang lebih baik.
@@ -712,19 +757,151 @@ function endEdit(keep) {
 
 /* ================= Navigasi ke objek ================= */
 let NAV = null;
-function startNav(id) { NAV = { id }; closeSheet(); showTab('map'); $('navbar').hidden = false; startWatch(); updateNav(); const st = stats(S.features[id]); if (me) map.fitBounds(L.latLngBounds([[me.lat, me.lon], [st.lat, st.lon]]).pad(0.3), { maxZoom: 18 }); }
+function startNav(id) { const st = stats(S.features[id]); startNavTo({ id }, st.lat, st.lon); }
+/* Navigasi ke titik bebas (hasil pencarian koordinat/tempat). */
+function startNavTo(t, lat, lon) { NAV = t; closeSheet(); showTab('map'); $('navbar').hidden = false; startWatch(); updateNav(); if (me) map.fitBounds(L.latLngBounds([[me.lat, me.lon], [lat, lon]]).pad(0.3), { maxZoom: 18 }); else map.setView([lat, lon], Math.max(map.getZoom(), 16)); }
 function stopNav() { NAV = null; navLayer.clearLayers(); $('navbar').hidden = true; if (updateReady && safeToReload()) applyUpdate(); }
 $('navStop').addEventListener('click', stopNav);
 function updateNav() {
   if (!NAV) return;
-  const f = S.features[NAV.id]; if (!f) { stopNav(); return; }
-  const st = stats(f), tgt = [st.lat, st.lon];
+  let tgt, name;
+  if (NAV.id) { const f = S.features[NAV.id]; if (!f) { stopNav(); return; } const st = stats(f); tgt = [st.lat, st.lon]; name = f.kode; }
+  else { tgt = [NAV.lat, NAV.lon]; name = NAV.label; }
   navLayer.clearLayers();
-  if (!me) { $('navText').textContent = `Menuju ${f.kode}: menunggu GPS…`; return; }
+  if (!NAV.id) L.circleMarker(tgt, { radius: 8, color: '#fff', weight: 3, fillColor: '#6a3fb5', fillOpacity: 1, interactive: false }).addTo(navLayer);
+  if (!me) { $('navText').textContent = `Menuju ${name}: menunggu GPS…`; return; }
   const d = hav([me.lat, me.lon], tgt), b = bearing([me.lat, me.lon], tgt);
   L.polyline([[me.lat, me.lon], tgt], { color: '#6a3fb5', weight: 3, dashArray: '8 8', interactive: false }).addTo(navLayer);
-  $('navText').textContent = d <= Math.max(5, me.acc) ? `${f.kode}: Anda sudah di lokasi (±${me.acc} m)` : `Menuju ${f.kode}: ${fmtLen(d)} · arah ${Math.round(b)}° (${arah(b)})`;
+  $('navText').textContent = d <= Math.max(5, me.acc) ? `${name}: Anda sudah di lokasi (±${me.acc} m)` : `Menuju ${name}: ${fmtLen(d)} · arah ${Math.round(b)}° (${arah(b)})`;
 }
+
+/* ================= Pencarian: objek, peta, layer acuan, koordinat, dan tempat (online) ================= */
+/* UTM → WGS 84 (kebalikan seri Krüger), untuk mencari koordinat UTM dari GPS genggam atau peta. */
+function fromUTM(zone, south, E, N) {
+  const a = 6378137, f = 1 / 298.257223563, k0 = 0.9996, n = f / (2 - f);
+  const A = a / (1 + n) * (1 + n * n / 4 + n ** 4 / 64);
+  const be = [0, n / 2 - 2 * n * n / 3 + 37 * n ** 3 / 96, n * n / 48 + n ** 3 / 15, 17 * n ** 3 / 480];
+  const de = [0, 2 * n - 2 * n * n / 3 - 2 * n ** 3, 7 * n * n / 3 - 8 * n ** 3 / 5, 56 * n ** 3 / 15];
+  const xi = (N - (south ? 10000000 : 0)) / (k0 * A), eta = (E - 500000) / (k0 * A);
+  let xp = xi, ep = eta;
+  for (let j = 1; j <= 3; j++) { xp -= be[j] * Math.sin(2 * j * xi) * Math.cosh(2 * j * eta); ep -= be[j] * Math.cos(2 * j * xi) * Math.sinh(2 * j * eta); }
+  const chi = Math.asin(Math.sin(xp) / Math.cosh(ep));
+  let phi = chi; for (let j = 1; j <= 3; j++) phi += de[j] * Math.sin(2 * j * chi);
+  const lam0 = ((zone - 1) * 6 - 180 + 3) * D2R;
+  return [phi / D2R, (lam0 + Math.atan2(Math.sinh(ep), Math.cos(xp))) / D2R];
+}
+/* Mengenali koordinat yang diketik: "-1.17, 104.37", "1°10'12" LS 104°22' BT", "S1 10.2 E104 22.5", "48M 412345 9870654". */
+function parseCoord(q) {
+  q = q.trim(); if (!q) return null;
+  const um = q.match(/^(\d{1,2})\s*([C-HJ-NP-X])?\s+(\d{5,7}(?:[.,]\d+)?)\s*(?:m\s*)?(?:[TE]\b)?[\s,;]+(\d{6,8}(?:[.,]\d+)?)\s*(?:m\s*)?(?:[UN]\b)?$/i);
+  if (um) {
+    const zone = +um[1], E = +um[3].replace(',', '.'), N = +um[4].replace(',', '.');
+    if (zone < 1 || zone > 60) return null;
+    const south = um[2] ? um[2].toUpperCase() < 'N' : N > 5000000;
+    const [lat, lon] = fromUTM(zone, south, E, N);
+    return isFinite(lat) && Math.abs(lat) <= 84 ? { lat, lon } : null;
+  }
+  let t = q.toUpperCase().replace(/\bL([US])\b/g, '$1').replace(/\bBT\b/g, 'T').replace(/\bBB\b/g, 'B');
+  if (!/^[\d\s.,;:°'′"″\-+NSEWUTB]+$/.test(t) || !/\d/.test(t)) return null;
+  const toks = t.match(/-?\d+(?:[.,]\d+)?|[NSEWUTB]/g) || [];
+  const isL = x => /^[A-Z]$/.test(x), H = { N: 'N', U: 'N', S: 'S', E: 'E', T: 'E', W: 'W', B: 'W' };
+  const groups = []; let cur = { nums: [], h: null };
+  const prefix = toks.length && isL(toks[0]);
+  for (const k of toks) {
+    if (isL(k)) {
+      if (prefix) { if (cur.nums.length || cur.h) groups.push(cur); cur = { nums: [], h: H[k] }; }
+      else { cur.h = H[k]; groups.push(cur); cur = { nums: [], h: null }; }
+    } else cur.nums.push(+k.replace(',', '.'));
+  }
+  if (cur.nums.length || cur.h) groups.push(cur);
+  let g = groups.filter(x => x.nums.length);
+  if (g.length === 1 && !g[0].h && (g[0].nums.length === 2 || g[0].nums.length === 4 || g[0].nums.length === 6)) { const n = g[0].nums, h = n.length / 2; g = [{ nums: n.slice(0, h) }, { nums: n.slice(h) }]; }
+  if (g.length !== 2 || g.some(x => x.nums.length > 3)) return null;
+  const val = x => { const [d, m = 0, sec = 0] = x.nums; if (m >= 60 || sec >= 60 || m < 0 || sec < 0) return NaN; let v = Math.abs(d) + m / 60 + sec / 3600; if (d < 0 || String(d).startsWith('-') || x.h === 'S' || x.h === 'W') v = -v; return v; };
+  let a = g[0], b = g[1];
+  if ((a.h === 'E' || a.h === 'W') || (b.h === 'N' || b.h === 'S')) [a, b] = [b, a];
+  let lat = val(a), lon = val(b);
+  if (!a.h && !b.h && Math.abs(lat) > 90 && Math.abs(lon) <= 90) [lat, lon] = [lon, lat];
+  if (!isFinite(lat) || !isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+  return { lat, lon };
+}
+const pinLayer = L.featureGroup().addTo(map);
+const PIN_ICON = L.divIcon({ className: '', iconSize: [30, 40], iconAnchor: [15, 39], popupAnchor: [0, -34], html: '<svg width="30" height="40" viewBox="0 0 30 40"><path d="M15 1C7.3 1 1.5 6.9 1.5 14.3 1.5 24.5 15 39 15 39s13.5-14.5 13.5-24.7C28.5 6.9 22.7 1 15 1z" fill="#6a3fb5" stroke="#fff" stroke-width="2"/><circle cx="15" cy="14.5" r="5" fill="#fff"/></svg>' });
+let PIN = null, REFS = [];
+function showPin(p, zoom) {
+  closeFloating(); showTab('map'); pinLayer.clearLayers(); PIN = p;
+  const dm = me ? hav([me.lat, me.lon], [p.lat, p.lon]) : null;
+  const st = dm == null ? '' : dm <= Math.max(5, me.acc) ? '<br>Anda berada di titik ini' : `<br>${fmtLen(dm)} dari Anda, arah ${arah(bearing([me.lat, me.lon], [p.lat, p.lon]))}`;
+  const m = L.marker([p.lat, p.lon], { icon: PIN_ICON }).addTo(pinLayer);
+  m.bindPopup(`<b>${esc(p.label)}</b>${p.sub ? `<br>${esc(p.sub)}` : ''}<br><span style="font-family:var(--font-data)">${esc(fmtCoord(p.lat, p.lon))}</span>${st}
+    <div class="row" style="margin-top:8px">${p.id ? '<button type="button" class="btn sm" data-pin="open">Buka formulir</button>' : '<button type="button" class="btn sm" data-pin="save">Simpan sebagai titik</button>'}<button type="button" class="btn ghost sm" data-pin="nav">Navigasi</button><button type="button" class="btn ghost sm" data-pin="x">Hapus penanda</button></div>`, { minWidth: 230 });
+  if (p.bounds) map.fitBounds(p.bounds.pad(0.2), { maxZoom: 18 }); else map.setView([p.lat, p.lon], Math.max(map.getZoom(), zoom || 17));
+  m.openPopup();
+}
+map.getContainer().addEventListener('click', ev => {
+  const b = ev.target.closest('[data-pin]'); if (!b || !PIN) return;
+  const p = PIN, a = b.dataset.pin; map.closePopup();
+  if (a === 'x') { pinLayer.clearLayers(); PIN = null; }
+  else if (a === 'open') { pinLayer.clearLayers(); PIN = null; openSheet(p.id); }
+  else if (a === 'nav') { pinLayer.clearLayers(); PIN = null; if (p.id) startNav(p.id); else startNavTo({ lat: p.lat, lon: p.lon, label: p.label }, p.lat, p.lon); }
+  else if (a === 'save') { pinLayer.clearLayers(); PIN = null; openSheet(newFeature('point', [+p.lat.toFixed(7), +p.lon.toFixed(7), 0], { src: 'peta', nama: p.kind === 'place' ? p.label : '' }).id); }
+});
+$('searchBtn').addEventListener('click', () => { const open = $('spanel').hidden; closeFloating(); if (open) { $('spanel').hidden = false; renderSearch(); $('sq').focus(); $('sq').select(); } });
+$('sClose').addEventListener('click', () => { $('spanel').hidden = true; });
+let searchTimer = null, onlineHits = null, onlineQ = '';
+$('sq').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(renderSearch, 120); });
+$('sq').addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); clearTimeout(searchTimer); renderSearch(); const q = $('sq').value.trim(); if (parseCoord(q)) { const first = $('sres').querySelector('[data-hit]'); if (first) first.click(); } else searchOnline(q); } });
+const hitIcon = { obj: 'i-pt', map: 'i-map', ref: 'i-line', coord: 'i-loc', place: 'i-search' };
+let HITS = [];
+function renderSearch() {
+  const q = $('sq').value.trim(), ql = q.toLowerCase(), out = []; HITS = [];
+  const hit = (grp, h) => { HITS.push(h); return { grp, html: `<button type="button" class="hit" data-hit="${HITS.length - 1}"><svg class="i" style="color:${h.color || 'var(--accent)'}"><use href="#${hitIcon[h.kind]}"/></svg><span class="main"><span class="t">${esc(h.label)}</span><br><span class="s">${esc(h.sub || '')}</span></span></button>` }; };
+  if (!q) { $('sres').innerHTML = `<div class="msg">Ketik kode/nama objek, nama peta, nama dari layer acuan, koordinat (mis. <b>-1.17, 104.37</b>, <b>1°10'12" LS 104°22'05" BT</b>, atau UTM <b>48M 412345 9870654</b>), atau nama tempat (perlu sinyal).</div>`; return; }
+  const c = parseCoord(q);
+  if (c) {
+    out.push(hit('Koordinat', { kind: 'coord', lat: c.lat, lon: c.lon, label: fmtCoord(c.lat, c.lon, 'dd'), sub: `UTM ${fmtCoord(c.lat, c.lon, 'utm')}${me ? ' · ' + fmtLen(hav([me.lat, me.lon], [c.lat, c.lon])) + ' dari Anda' : ''}` }));
+    MAPS.filter(m => insideMap(m, c.lat, c.lon)).forEach(m => out.push(hit('Peta yang mencakup koordinat ini', { kind: 'map', id: m.id, label: m.name, sub: KIND_LABEL[m.kind] || 'Peta offline' })));
+  } else {
+    const fs = Object.values(S.features).filter(f => [f.kode, f.nama, f.vegetasi, f.deskripsi, f.catatan, habLabel(f.habitat), layerName(layerOf(f))].join(' ').toLowerCase().includes(ql));
+    const rank = f => (String(f.kode).toLowerCase() === ql ? 0 : String(f.kode).toLowerCase().startsWith(ql) ? 1 : String(f.nama || '').toLowerCase().includes(ql) ? 2 : 3);
+    fs.sort((a, b) => rank(a) - rank(b) || b.t - a.t).slice(0, 30).forEach(f => { const st = stats(f); out.push(hit('Objek survei', { kind: 'obj', id: f.id, lat: st.lat, lon: st.lon, color: f.habitat ? habColor(f.habitat) : '#777', label: f.kode + (f.nama ? ' · ' + f.nama : ''), sub: `${habLabel(f.habitat)} · ${layerName(layerOf(f))}${me ? ' · ' + fmtLen(hav([me.lat, me.lon], [st.lat, st.lon])) : ''}` })); });
+    MAPS.filter(m => m.name.toLowerCase().includes(ql)).forEach(m => out.push(hit('Peta Saya', { kind: 'map', id: m.id, label: m.name, sub: KIND_LABEL[m.kind] || 'Peta offline' })));
+    REFS.forEach(r => r.geojson.features.forEach(f => {
+      const n = f.properties && (f.properties.name || f.properties.NAMA || f.properties.nama || f.properties.Name); if (!n || !String(n).toLowerCase().includes(ql) || !f.geometry) return;
+      const b = L.geoJSON(f).getBounds(); if (!b.isValid()) return;
+      if (out.filter(o => o.grp === 'Layer acuan').length < 20) out.push(hit('Layer acuan', { kind: 'ref', lat: b.getCenter().lat, lon: b.getCenter().lng, bounds: f.geometry.type === 'Point' ? null : b, label: String(n), sub: r.name, color: '#c9a400' }));
+    }));
+    if (onlineHits && onlineQ === q) onlineHits.forEach(p => out.push(hit('Tempat (OpenStreetMap)', p)));
+  }
+  let html = '', last = '';
+  out.forEach(o => { if (o.grp !== last) { html += `<div class="grp">${esc(o.grp)}</div>`; last = o.grp; } html += o.html; });
+  if (!c) {
+    if (onlineQ === q && onlineHits && !onlineHits.length) html += '<div class="msg">Tempat tidak ditemukan di OpenStreetMap.</div>';
+    else if (onlineQ !== q || !onlineHits) html += navigator.onLine && q.length >= 3 ? `<button type="button" class="hit" data-online="1"><svg class="i"><use href="#i-search"/></svg><span class="main"><span class="t">Cari tempat “${esc(q)}”</span><br><span class="s">Desa, sungai, pantai, kota (OpenStreetMap; perlu sinyal)</span></span></button>` : (!out.length ? `<div class="msg">${navigator.onLine ? 'Tidak ada yang cocok.' : 'Tidak ada yang cocok di HP ini. Pencarian nama tempat butuh sinyal; koordinat dan objek tetap bisa dicari tanpa sinyal.'}</div>` : '');
+  }
+  $('sres').innerHTML = html;
+}
+async function searchOnline(q) {
+  if (!q || q.length < 3) return;
+  if (!navigator.onLine) { toast('Tidak ada sinyal. Cari koordinat atau objek, atau coba lagi saat online.'); return; }
+  $('sres').insertAdjacentHTML('beforeend', '<div class="msg" id="sbusy">Mencari…</div>');
+  try {
+    const c = map.getCenter();
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=10&accept-language=id&countrycodes=id&viewbox=${c.lng - 1},${c.lat + 1},${c.lng + 1},${c.lat - 1}&q=${encodeURIComponent(q)}`);
+    if (!r.ok) throw new Error(r.status);
+    const js = await r.json();
+    onlineQ = q; onlineHits = js.map(p => { const lat = +p.lat, lon = +p.lon, bb = p.boundingbox ? p.boundingbox.map(Number) : null; return { kind: 'place', lat, lon, label: p.name || String(p.display_name).split(',')[0], sub: p.display_name, bounds: bb && (bb[1] - bb[0] > 0.002) ? L.latLngBounds([bb[0], bb[2]], [bb[1], bb[3]]) : null }; });
+  } catch (e) { toast('Pencarian tempat gagal. Periksa sinyal lalu coba lagi.'); }
+  if ($('sq').value.trim() === q) renderSearch();
+}
+$('sres').addEventListener('click', ev => {
+  if (ev.target.closest('[data-online]')) { searchOnline($('sq').value.trim()); return; }
+  const b = ev.target.closest('[data-hit]'); if (!b) return;
+  const h = HITS[+b.dataset.hit]; if (!h) return;
+  if (h.kind === 'map') { const m = MAPS.find(x => x.id === h.id); if (m) { $('spanel').hidden = true; openMap(m); } return; }
+  if (h.kind === 'obj') { const f = S.features[h.id]; if (!f) return; if (!layerVisible(f)) { const l = S.layers.find(x => x.id === layerOf(f)); l.visible = true; save(); drawAll(); } showPin({ id: f.id, lat: h.lat, lon: h.lon, label: h.label, sub: h.sub, bounds: f.type === 'point' ? null : layers[f.id] && layers[f.id].getBounds() }); return; }
+  showPin({ kind: h.kind, lat: h.lat, lon: h.lon, label: h.kind === 'coord' ? 'Koordinat dicari' : h.label, sub: h.kind === 'coord' ? '' : h.sub, bounds: h.bounds }, h.kind === 'place' ? 15 : 17);
+});
 
 /* ================= Rekam jalur ================= */
 const TRK_MAX_ACC = 30, TRK_MIN_STEP = 4;
@@ -781,10 +958,15 @@ async function renderLayers() {
     <div>
       ${opt('sat', 'Citra satelit (Esri)', 'Bagian yang pernah tampil tersimpan otomatis', '<span class="badge">online</span>')}
       ${opt('osm', 'Peta jalan (OpenStreetMap)', 'Bagian yang pernah tampil tersimpan otomatis', '<span class="badge">online</span>')}
-      ${MAPS.map(m => opt('off:' + m.id, m.name, `zoom ${m.minzoom}–${m.maxzoom} · ${m.count.toLocaleString('id-ID')} tile · ${fmtMB(m.bytes)}`, '<span class="badge off">offline</span>')).join('')}
+      ${MAPS.map(m => opt('off:' + m.id, m.name, `${KIND_LABEL[m.kind] || 'Peta offline'} · zoom ${m.minzoom}–${m.maxzoom} · ${fmtMB(m.bytes)}`, '<span class="badge off">offline</span>')).join('')}
       ${opt('none', 'Polos', 'Tanpa peta dasar; tetap bisa memetakan dengan GPS')}
     </div>
-    <button type="button" class="btn ghost block" id="lpImport">+ Impor peta offline (MBTiles / ZIP)</button>
+    <button type="button" class="btn ghost block" id="lpImport">+ Impor peta (GeoPDF, GeoTIFF, KMZ, MBTiles)</button>
+    <h2>Lapisan objek</h2>
+    <div>
+      ${S.layers.map(l => `<label class="opt"><input type="checkbox" data-lyr="${l.id}" ${l.visible !== false ? 'checked' : ''}><span class="main"><span class="t">${esc(l.name)}</span><br><span class="s">${countIn(l.id)} objek${S.activeLayer === l.id ? ' · objek baru masuk ke sini' : ''}</span></span>${S.activeLayer === l.id ? '<span class="badge">aktif</span>' : ''}</label>`).join('')}
+    </div>
+    <button type="button" class="btn ghost block" id="lpLayers">Kelola lapisan (aktif, tambah, ganti nama)</button>
     <h2>Tampilan</h2>
     <div>
       <label class="opt"><input type="checkbox" id="lpFeats" ${showFeats ? 'checked' : ''}><span class="main"><span class="t">Objek survei</span></span></label>
@@ -795,12 +977,28 @@ async function renderLayers() {
 $('lpanel').addEventListener('change', ev => {
   const t = ev.target;
   if (t.name === 'base') { setBase(t.value); const m = MAPS.find(x => 'off:' + x.id === t.value); if (m && !map.getBounds().intersects(L.latLngBounds([m.bounds[1], m.bounds[0]], [m.bounds[3], m.bounds[2]]))) zoomToMap(m); }
+  else if (t.dataset.lyr) { const l = S.layers.find(x => x.id === t.dataset.lyr); if (l) { l.visible = t.checked; save(); drawAll(); } }
   else if (t.id === 'lpFeats') { showFeats = t.checked; setPref('feats', showFeats); if (showFeats) featLayer.addTo(map); else map.removeLayer(featLayer); }
   else if (t.id === 'lpLabels') { showLabels = t.checked; setPref('labels', showLabels); lastPerm = tooltipPermanent(); drawAll(); }
   else if (t.dataset.ref) { if (t.checked) hiddenRefs.delete(t.dataset.ref); else hiddenRefs.add(t.dataset.ref); setPref('hiddenRefs', [...hiddenRefs]); drawRefs(false); }
 });
-$('lpanel').addEventListener('click', ev => { if (ev.target.id === 'lpClose') $('lpanel').hidden = true; if (ev.target.id === 'lpImport') $('mapIn').click(); });
+$('lpanel').addEventListener('click', ev => { if (ev.target.id === 'lpClose') $('lpanel').hidden = true; if (ev.target.id === 'lpImport') $('mapIn').click(); if (ev.target.id === 'lpLayers') { showTab('list'); setTimeout(() => { const el = $('lyrSec'); if (el) el.scrollIntoView(); }, 0); } });
+function countIn(lid) { return Object.values(S.features).filter(f => layerOf(f) === lid).length; }
 function zoomToMap(m) { const b = m.bounds; map.fitBounds([[b[1], b[0]], [b[3], b[2]]]); if (map.getZoom() < m.minzoom) map.setZoom(m.minzoom); }
+function openMap(m) { setBase('off:' + m.id); showTab('map'); zoomToMap(m); }
+function inPoly(lon, lat, poly) { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, yi] = poly[i], [xj, yj] = poly[j]; if ((yi > lat) !== (yj > lat) && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) c = !c; } return c; }
+function insideMap(m, lat, lon) { const b = m.bounds; if (lon < b[0] || lon > b[2] || lat < b[1] || lat > b[3]) return false; return !m.footprint || inPoly(lon, lat, m.footprint); }
+function distToMap(m, lat, lon) { if (insideMap(m, lat, lon)) return 0; const b = m.bounds; return hav([lat, lon], [Math.min(b[3], Math.max(b[1], lat)), Math.min(b[2], Math.max(b[0], lon))]); }
+function activeMap() { return base.kind.startsWith('off:') ? MAPS.find(x => 'off:' + x.id === base.kind) || null : null; }
+/* Penanda peta aktif di layar peta: nama peta dan apakah posisi Anda di dalam cakupannya. */
+function updateMapChip() {
+  const m = activeMap(), chip = $('mapChip');
+  if (!m) { chip.hidden = true; return; }
+  let st = '';
+  if (me) { const d = distToMap(m, me.lat, me.lon); st = d === 0 ? 'Anda di dalam peta' : `<span class="out">Di luar peta · ${fmtLen(d)} arah ${arah(bearing([me.lat, me.lon], [(m.bounds[1] + m.bounds[3]) / 2, (m.bounds[0] + m.bounds[2]) / 2]))}</span>`; }
+  chip.innerHTML = `<b>${esc(m.name)}</b>${st ? `<span>${st}</span>` : ''}`; chip.hidden = false;
+}
+$('mapChip').addEventListener('click', () => { const m = activeMap(); if (m) zoomToMap(m); });
 
 /* ================= Lembar formulir objek ================= */
 let SHEET = null;
@@ -839,6 +1037,7 @@ function renderSheet() {
         ${f.type === 'point' ? '<button type="button" class="btn ghost sm" data-s="regps">Ambil ulang GPS</button>' : `<button type="button" class="btn ghost sm" data-s="swap">Jadikan ${f.type === 'line' ? 'area' : 'garis'}</button>`}
       </div></div>
     <div class="fields">
+      ${S.layers.length > 1 ? `<div class="field w"><span class="lbl">Lapisan</span>${chipsHTML('layer', S.layers.map(l => [l.id, l.name]), layerOf(f), false)}</div>` : ''}
       <div class="field w"><span class="lbl">Habitat</span>${chipsHTML('habitat', HABITAT, f.habitat, false, true)}</div>
       <div class="field"><label for="f-kode">Kode</label><input type="text" id="f-kode" data-k="kode" value="${esc(f.kode)}"></div>
       <div class="field"><label for="f-nama">Nama lokasi</label><input type="text" id="f-nama" data-k="nama" value="${esc(f.nama || '')}" placeholder="mis. Muara Sungai Cemara"></div>
@@ -874,6 +1073,7 @@ sheetBody.addEventListener('click', async ev => {
   if (chip) {
     const k = chip.dataset.chip, v = chip.dataset.v;
     if (chip.dataset.multi === '1') { const a = f[k] || []; f[k] = a.includes(v) ? a.filter(x => x !== v) : [...a, v]; chip.setAttribute('aria-pressed', f[k].includes(v)); }
+    else if (k === 'layer') { f.layer = v; chip.parentElement.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.v === v)); drawFeature(f); if (!layerVisible(f)) toast('Lapisan ini sedang disembunyikan di peta'); }
     else { f[k] = f[k] === v ? '' : v; chip.parentElement.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.v === f[k])); }
     f.updated = Date.now(); save();
     if (k === 'habitat') { drawFeature(f); renderLegend(); $('sheetTitle').querySelector('svg').style.color = habColor(f.habitat); }
@@ -959,18 +1159,81 @@ $('viewerDel').addEventListener('click', async ev => {
 /* ================= Tab ================= */
 let currentTab = 'map';
 function showTab(t) {
-  currentTab = t; closeFloating();
-  $('mapView').hidden = t !== 'map'; $('listView').hidden = t !== 'list'; $('dataView').hidden = t !== 'data';
+  currentTab = t; closeFloating(); setPref('tab', t);
+  $('mapView').hidden = t !== 'map'; $('libView').hidden = t !== 'lib'; $('listView').hidden = t !== 'list'; $('dataView').hidden = t !== 'data';
   document.querySelectorAll('nav.tabs button').forEach(b => b.setAttribute('aria-current', b.dataset.tab === t ? 'page' : 'false'));
   if (t === 'map') setTimeout(() => map.invalidateSize(), 0);
+  if (t === 'lib') renderLib();
   if (t === 'list') renderList();
   if (t === 'data') renderData();
   if (updateReady && safeToReload()) applyUpdate();
 }
 $('tabs').addEventListener('click', ev => { const b = ev.target.closest('[data-tab]'); if (b) showTab(b.dataset.tab); });
 
+/* ================= Peta Saya (pustaka peta, seperti Avenza Maps) ================= */
+let libQuery = '', libURLs = [];
+const LIB_SORT = { near: 'Terdekat', new: 'Terbaru', name: 'Nama' };
+async function renderLib() {
+  libURLs.forEach(u => URL.revokeObjectURL(u)); libURLs = [];
+  const sort = pref('libSort', 'near'), act = activeMap();
+  const ctr = m => [(m.bounds[1] + m.bounds[3]) / 2, (m.bounds[0] + m.bounds[2]) / 2];
+  const dist = m => me ? distToMap(m, me.lat, me.lon) : null;
+  const list = MAPS.slice().sort((a, b) => sort === 'name' ? a.name.localeCompare(b.name, 'id') : sort === 'new' || !me ? (b.created || 0) - (a.created || 0) : dist(a) - dist(b));
+  const card = m => {
+    const d = dist(m);
+    const where = d == null ? '' : d === 0 ? '<span class="in">● Anda di dalam peta ini</span>' : `${fmtLen(d)} dari Anda · arah ${arah(bearing([me.lat, me.lon], ctr(m)))}`;
+    return `<div class="mapcard${act && act.id === m.id ? ' on' : ''}" data-name="${esc(m.name.toLowerCase())}">
+      <button type="button" class="th" data-l="open" data-id="${m.id}" aria-label="Buka ${esc(m.name)}" data-thumb="${m.id}"><svg class="i"><use href="#i-map"/></svg></button>
+      <span class="main" data-l="open" data-id="${m.id}"><span class="t">${esc(m.name)}</span>${act && act.id === m.id ? ' <span class="badge">dipakai</span>' : ''}<br>
+        <span class="s">${esc(KIND_LABEL[m.kind] || 'Peta offline')} · zoom ${m.minzoom}–${m.maxzoom} · ${fmtMB(m.bytes)}${m.created ? ' · ' + fmtTime(m.created / 1000).slice(0, 10) : ''}</span><br><span class="s">${where}</span></span>
+      <span class="acts"><button type="button" class="btn ghost sm" data-l="ren" data-id="${m.id}">Ganti nama</button><button type="button" class="btn danger sm" data-l="del" data-id="${m.id}">Hapus</button></span></div>`;
+  };
+  const online = [['sat', 'Citra satelit (Esri)', 'Online; bagian yang pernah tampil tersimpan otomatis'], ['osm', 'Peta jalan (OpenStreetMap)', 'Online; bagian yang pernah tampil tersimpan otomatis'], ['none', 'Polos', 'Tanpa peta dasar']];
+  $('libPage').innerHTML = `
+    <section class="section">
+      <button type="button" class="btn block" data-l="import">+ Impor peta</button>
+      <p class="note">GeoPDF (QGIS, ArcGIS, peta RBI/BIG, Avenza), GeoTIFF (ortofoto drone, citra satelit), KMZ (Google Earth, Garmin), MBTiles, atau ZIP tile. Peta dipotong menjadi tile dan disimpan di HP, lalu bisa dipakai tanpa sinyal dengan titik GPS Anda di atasnya.</p>
+    </section>
+    <section class="section"><h2>Peta saya (${MAPS.length})</h2>
+      ${MAPS.length > 2 ? `<input type="search" id="lq" placeholder="Cari nama peta" value="${esc(libQuery)}" aria-label="Cari peta">` : ''}
+      ${MAPS.length > 1 ? `<div class="chips">${Object.entries(LIB_SORT).map(([k, l]) => `<button type="button" class="chip" data-sort="${k}" aria-pressed="${sort === k}">${l}</button>`).join('')}</div>` : ''}
+      ${list.length ? `<div class="list" id="libList">${list.map(card).join('')}</div><div class="empty" id="libNone" hidden>Tidak ada peta dengan nama itu.</div>` : '<div class="empty">Belum ada peta. Tekan "Impor peta" lalu pilih file GeoPDF, GeoTIFF, KMZ, atau MBTiles dari HP.</div>'}
+    </section>
+    <section class="section"><h2>Peta dasar online</h2>
+      <div class="list">${online.map(([k, t, d]) => `<div class="mapcard${base.kind === k ? ' on' : ''}"><span class="main" data-l="base" data-id="${k}"><span class="t">${t}</span>${base.kind === k ? ' <span class="badge">dipakai</span>' : ''}<br><span class="s">${d}</span></span></div>`).join('')}</div>
+    </section>
+    <details class="guide"><summary>Cara menyiapkan GeoPDF / GeoTIFF</summary><ol>
+      <li><b>QGIS</b>: susun peta di Layout → Export as PDF → centang <b>Create Geospatial PDF (GeoPDF)</b>. Untuk citra/drone: klik kanan layer → Export → Save As… format GeoTIFF.</li>
+      <li><b>ArcGIS Pro</b>: Share → Export Layout → PDF, centang <b>Export georeference information</b>.</li>
+      <li>Peta RBI dan peta tematik GeoPDF dari instansi bisa langsung diimpor.</li>
+      <li>Kirim file ke HP (kabel USB, Google Drive, atau WhatsApp sebagai <i>dokumen</i>), lalu "Impor peta".</li>
+      <li>MBTiles dari QGIS: Processing → Raster tools → <b>Generate XYZ tiles (MBTiles)</b>.</li>
+      <li>Ukuran: impor dibatasi ±${Math.round(PX_CAP / 1e6)} juta piksel per peta; peta lebih besar diperkecil otomatis. Untuk detail tinggi di area luas, potong per blok.</li>
+    </ol></details>`;
+  if ($('lq')) { $('lq').addEventListener('input', ev => { libQuery = ev.target.value; filterLib(); }); filterLib(); }
+  for (const btn of document.querySelectorAll('#libPage [data-thumb]')) {
+    const m = MAPS.find(x => x.id === btn.dataset.thumb); if (!m) continue;
+    if (!m.thumb) { m.thumb = await makeThumb(m).catch(() => null); if (m.thumb) pdbPut('maps', m.id, m).catch(() => {}); }
+    if (m.thumb && document.body.contains(btn)) { const u = URL.createObjectURL(m.thumb); libURLs.push(u); btn.innerHTML = `<img src="${u}" alt="">`; }
+  }
+}
+function filterLib() { const q = libQuery.trim().toLowerCase(); let n = 0; document.querySelectorAll('#libList .mapcard').forEach(c => { const ok = !q || c.dataset.name.includes(q); c.hidden = !ok; if (ok) n++; }); if ($('libNone')) $('libNone').hidden = n > 0; }
+$('libPage').addEventListener('click', async ev => {
+  const so = ev.target.closest('[data-sort]'); if (so) { setPref('libSort', so.dataset.sort); renderLib(); return; }
+  const b = ev.target.closest('[data-l]'); if (!b) return;
+  const a = b.dataset.l, m = MAPS.find(x => x.id === b.dataset.id);
+  if (a === 'import') $('mapIn').click();
+  else if (a === 'base') { setBase(b.dataset.id); showTab('map'); }
+  else if (a === 'open' && m) openMap(m);
+  else if (a === 'ren' && m) { const n = prompt('Nama peta', m.name); if (n && n.trim()) { m.name = n.trim(); await pdbPut('maps', m.id, m); updateMapChip(); renderLib(); } }
+  else if (a === 'del' && m) {
+    if (armed !== 'mapdel' + m.id) { armed = 'mapdel' + m.id; b.classList.add('armed'); b.textContent = 'Yakin?'; setTimeout(() => { if (armed === 'mapdel' + m.id) { armed = null; b.classList.remove('armed'); b.textContent = 'Hapus'; } }, 3500); return; }
+    armed = null; await deleteMap(m.id); renderLib(); toast('Peta dihapus dari HP');
+  }
+});
+
 /* ================= Daftar objek ================= */
-let listFilter = '', listQuery = '';
+let listFilter = '', listQuery = '', listLayer = '';
 function renderList() {
   const all = Object.values(S.features).sort((a, b) => b.t - a.t);
   const sum = {}; let totHa = 0, totLen = 0;
@@ -978,7 +1241,7 @@ function renderList() {
   const rows = Object.entries(sum).sort((a, b) => b[1].n - a[1].n);
   const nPh = all.reduce((a, f) => a + (f._photos || []).length, 0);
   const q = listQuery.toLowerCase();
-  const list = all.filter(f => (!listFilter || (f.habitat || '-') === listFilter) && (!q || [f.kode, f.nama, f.vegetasi, f.deskripsi, f.catatan, habLabel(f.habitat)].join(' ').toLowerCase().includes(q)));
+  const list = all.filter(f => (!listFilter || (f.habitat || '-') === listFilter) && (!listLayer || layerOf(f) === listLayer) && (!q || [f.kode, f.nama, f.vegetasi, f.deskripsi, f.catatan, habLabel(f.habitat), layerName(layerOf(f))].join(' ').toLowerCase().includes(q)));
   $('listPage').innerHTML = `
     <section class="stats" aria-label="Ringkasan">
       <div class="stat"><div class="v">${all.length}</div><div class="k">Objek</div></div>
@@ -991,18 +1254,50 @@ function renderList() {
     </tbody></table></div></section>` : ''}
     <section class="section"><h2>Daftar objek</h2>
       <input type="search" id="q" placeholder="Cari kode, nama, vegetasi, catatan" value="${esc(listQuery)}" aria-label="Cari objek">
+      ${S.layers.length > 1 ? `<div class="chips"><button type="button" class="chip" data-lfilter="" aria-pressed="${!listLayer}">Semua lapisan</button>${S.layers.map(l => `<button type="button" class="chip" data-lfilter="${l.id}" aria-pressed="${listLayer === l.id}">${esc(l.name)}</button>`).join('')}</div>` : ''}
       ${rows.length > 1 ? `<div class="chips"><button type="button" class="chip" data-filter="" aria-pressed="${!listFilter}">Semua</button>${rows.map(([k]) => `<button type="button" class="chip" data-filter="${k}" aria-pressed="${listFilter === k}"><span class="sw" style="background:${k === '-' ? '#777' : habColor(k)}"></span>${esc(k === '-' ? 'Belum dipilih' : habLabel(k))}</button>`).join('')}</div>` : ''}
       ${list.length ? `<div class="list">${list.map(f => { const st = stats(f); const d = me ? hav([me.lat, me.lon], [st.lat, st.lon]) : null; return `<button type="button" class="item" data-open="${f.id}">
           <svg class="i" style="color:${f.habitat ? habColor(f.habitat) : '#777'}"><use href="#${ICON[f.type]}"/></svg>
-          <span class="main"><span class="t">${esc(f.kode)}${f.nama ? ' · ' + esc(f.nama) : ''}</span><br><span class="s">${esc(habLabel(f.habitat))}${f.type === 'area' ? ' · ' + fmtHa(st.ha) : f.type === 'line' ? ' · ' + fmtLen(st.len) : ''}${f._photos ? ` · ${f._photos.length} foto` : ''}</span></span>
+          <span class="main"><span class="t">${esc(f.kode)}${f.nama ? ' · ' + esc(f.nama) : ''}</span><br><span class="s">${esc(habLabel(f.habitat))}${S.layers.length > 1 ? ' · ' + esc(layerName(layerOf(f))) : ''}${f.type === 'area' ? ' · ' + fmtHa(st.ha) : f.type === 'line' ? ' · ' + fmtLen(st.len) : ''}${f._photos ? ` · ${f._photos.length} foto` : ''}</span></span>
           <span class="k">${d != null ? fmtLen(d) : fmtTime(f.t).slice(0, 10)}</span></button>`; }).join('')}</div>`
         : `<div class="empty">${all.length ? 'Tidak ada objek yang cocok.' : 'Belum ada objek. Buka tab Peta lalu tekan "Tandai" atau "Rekam jalur".'}</div>`}
+    </section>
+    <section class="section" id="lyrSec"><h2>Lapisan objek</h2>
+      <p class="note">Kelompokkan objek per kegiatan, hari, atau tim (seperti layer di Avenza). Objek baru masuk ke lapisan <b>aktif</b>; centang untuk menampilkan di peta.</p>
+      <div class="box">${S.layers.map(l => `<div class="lyrrow">
+        <input type="radio" name="actLyr" value="${l.id}" ${S.activeLayer === l.id ? 'checked' : ''} aria-label="Jadikan aktif: ${esc(l.name)}">
+        <span class="main"><span class="t">${esc(l.name)}</span><br><span class="s">${countIn(l.id)} objek${S.activeLayer === l.id ? ' · aktif' : ''}</span></span>
+        <label class="check"><input type="checkbox" data-vis="${l.id}" ${l.visible !== false ? 'checked' : ''}>Tampil</label>
+        <button type="button" class="btn ghost sm" data-lyr="ren" data-id="${l.id}">Ubah</button>
+        ${S.layers.length > 1 ? `<button type="button" class="btn danger sm" data-lyr="del" data-id="${l.id}">Hapus</button>` : ''}</div>`).join('')}</div>
+      <button type="button" class="btn ghost block" data-lyr="add">+ Lapisan baru</button>
     </section>`;
   const qi = $('q');
   qi.addEventListener('input', () => { listQuery = qi.value; const pos = qi.selectionStart; renderList(); const n = $('q'); n.focus(); n.setSelectionRange(pos, pos); });
 }
+$('listPage').addEventListener('change', ev => {
+  const t = ev.target;
+  if (t.name === 'actLyr') { S.activeLayer = t.value; save(); renderList(); toast('Objek baru masuk ke lapisan "' + layerName(t.value) + '"'); }
+  else if (t.dataset.vis) { const l = S.layers.find(x => x.id === t.dataset.vis); if (l) { l.visible = t.checked; save(); drawAll(); } }
+});
 $('listPage').addEventListener('click', ev => {
   const o = ev.target.closest('[data-open]'); if (o) { openSheet(o.dataset.open); return; }
+  const lf = ev.target.closest('[data-lfilter]'); if (lf) { listLayer = lf.dataset.lfilter; renderList(); return; }
+  const ly = ev.target.closest('[data-lyr]');
+  if (ly) {
+    const a = ly.dataset.lyr, l = S.layers.find(x => x.id === ly.dataset.id);
+    if (a === 'add') { const n = prompt('Nama lapisan baru', `Lapisan ${S.layers.length + 1}`); if (!n || !n.trim()) return; let k = S.layers.length + 1; while (S.layers.some(x => x.id === 'L' + k)) k++; S.layers.push({ id: 'L' + k, name: n.trim(), visible: true }); S.activeLayer = 'L' + k; save(); renderList(); toast('Lapisan dibuat dan dijadikan aktif'); }
+    else if (a === 'ren' && l) { const n = prompt('Nama lapisan', l.name); if (n && n.trim()) { l.name = n.trim(); save(); renderList(); } }
+    else if (a === 'del' && l) {
+      const to = S.layers.find(x => x.id !== l.id), n = countIn(l.id);
+      if (armed !== 'lyr' + l.id) { armed = 'lyr' + l.id; ly.classList.add('armed'); ly.textContent = n ? `Pindah ${n} objek ke "${to.name}"?` : 'Yakin?'; setTimeout(() => { if (armed === 'lyr' + l.id) { armed = null; renderList(); } }, 3500); return; }
+      armed = null;
+      Object.values(S.features).forEach(f => { if (layerOf(f) === l.id) { f.layer = to.id; f.updated = Date.now(); } });
+      S.layers = S.layers.filter(x => x.id !== l.id); if (S.activeLayer === l.id) S.activeLayer = to.id; if (listLayer === l.id) listLayer = '';
+      save(); drawAll(); renderList(); toast(n ? `Lapisan dihapus; ${n} objek dipindah ke "${to.name}"` : 'Lapisan dihapus');
+    }
+    return;
+  }
   const fl = ev.target.closest('[data-filter]'); if (fl) { listFilter = fl.dataset.filter; renderList(); }
 });
 
@@ -1027,16 +1322,8 @@ async function renderData() {
       <p class="note">Paket lengkap (ZIP) berisi Shapefile (titik, garis, area; WGS 84), GeoJSON, KML, GPX, CSV dengan kolom UTM, folder foto dengan Daftar_Foto.csv, dan cadangan .json. Langsung terbuka di QGIS dan ArcGIS.</p>
     </section>
     <section class="section"><h2>Peta offline</h2>
-      ${MAPS.length ? `<div class="list">${MAPS.map(m => `<div class="item" style="cursor:default"><span class="main"><span class="t">${esc(m.name)}</span><br><span class="s">zoom ${m.minzoom}–${m.maxzoom} · ${m.count.toLocaleString('id-ID')} tile · ${fmtMB(m.bytes)}</span></span><button type="button" class="btn ghost sm" data-d="mapuse" data-id="${m.id}">Pakai</button><button type="button" class="btn danger sm" data-d="mapdel" data-id="${m.id}">Hapus</button></div>`).join('')}</div>` : '<p class="note">Belum ada peta offline. Impor file MBTiles atau ZIP tile agar citra tetap tampil tanpa sinyal.</p>'}
-      <button type="button" class="btn ghost block" data-d="mapadd">+ Impor peta offline (MBTiles / ZIP)</button>
-      <details class="guide"><summary>Cara membuat peta offline di QGIS</summary><ol>
-        <li>Buka QGIS dan tambahkan citra: Browser → XYZ Tiles → New Connection, URL <code>https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}</code>; atau citra drone sendiri / Sentinel-2.</li>
-        <li>Perbesar peta ke area survei, mis. kawasan KEE Pantai Cemara.</li>
-        <li>Processing Toolbox → Raster tools → <b>Generate XYZ tiles (MBTiles)</b>.</li>
-        <li>Extent: kanvas peta; Minimum zoom 12; Maximum zoom 17 (18 untuk detail, ukuran ±4× lebih besar); Tile format JPG, kualitas 75.</li>
-        <li>Simpan sebagai <code>.mbtiles</code>, pindahkan ke HP (kabel USB, Drive, atau WhatsApp sebagai dokumen).</li>
-        <li>Di aplikasi: tombol Lapisan → Impor peta offline → pilih file.</li>
-      </ol><p class="hint">Hormati ketentuan penyedia citra. Untuk laporan resmi, citra drone sendiri atau Sentinel-2 (lisensi terbuka) paling aman. ZIP hasil "Generate XYZ tiles (Directory)" juga bisa diimpor (skema XYZ, bukan TMS).</p></details>
+      <p class="note">${MAPS.length} peta tersimpan (${fmtMB(MAPS.reduce((t, m) => t + (m.bytes || 0), 0))}). Impor, buka, dan hapus peta di tab <b>Peta Saya</b>.</p>
+      <button type="button" class="btn ghost block" data-d="lib">Buka Peta Saya</button>
       <p class="note" id="tileInfo"></p>
       <button type="button" class="btn ghost block" data-d="tilesclear">Kosongkan simpanan peta online</button>
     </section>
@@ -1052,7 +1339,7 @@ async function renderData() {
     <section class="section"><h2>Penyimpanan</h2><p class="note" id="storeInfo"></p>
       <button type="button" class="btn danger block" data-d="wipe">Hapus semua objek dan foto</button>
     </section>
-    <p class="note">Peta dasar online: Esri World Imagery dan © OpenStreetMap contributors. Pustaka: Leaflet, sql.js.</p>`;
+    <p class="note">Peta dasar online: Esri World Imagery dan © OpenStreetMap contributors. Pustaka: Leaflet, sql.js, PDF.js, geotiff.js, proj4js.</p>`;
   if ('caches' in window) caches.open('peta-tiles').then(c => c.keys()).then(k => { const el = $('tileInfo'); if (el) el.textContent = `${k.length.toLocaleString('id-ID')} potongan peta online tersimpan dari tampilan sebelumnya.`; }).catch(() => {});
   if (navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then(e => { const el = $('storeInfo'); if (el && e.quota) el.textContent = `Terpakai ${fmtMB(e.usage)} dari ±${(e.quota / 1073741824).toFixed(1).replace('.', ',')} GB yang tersedia untuk aplikasi.`; }).catch(() => {});
 }
@@ -1072,12 +1359,7 @@ dataPage.addEventListener('click', async ev => {
   else if (a === 'json') download(new Blob([backupJSON()], { type: 'application/json' }), fileBase() + '.json');
   else if (a === 'import') $('importIn').click();
   else if (a === 'refadd') $('refIn').click();
-  else if (a === 'mapadd') $('mapIn').click();
-  else if (a === 'mapuse') { const m = MAPS.find(x => x.id === b.dataset.id); if (!m) return; setBase('off:' + m.id); showTab('map'); zoomToMap(m); }
-  else if (a === 'mapdel') {
-    if (armed !== 'mapdel' + b.dataset.id) { armed = 'mapdel' + b.dataset.id; b.classList.add('armed'); b.textContent = 'Yakin?'; return; }
-    armed = null; await deleteMap(b.dataset.id); renderData(); toast('Peta offline dihapus');
-  }
+  else if (a === 'lib') showTab('lib');
   else if (a === 'refdel') { await pdbDel('ref', b.dataset.id); await drawRefs(); renderData(); toast('Layer acuan dihapus'); }
   else if (a === 'tilesclear') { if ('caches' in window) await caches.delete('peta-tiles'); renderData(); toast('Simpanan peta online dikosongkan'); }
   else if (a === 'wipe') {
@@ -1095,7 +1377,7 @@ function backupJSON() { return JSON.stringify({ app: 'peta-survei', exported: ne
 function props(f) {
   const st = stats(f), u = toUTM(st.lat, st.lon);
   return {
-    kode: f.kode, tipe: TIPE[f.type], nama: f.nama || '', habitat_kode: f.habitat || '', habitat: f.habitat ? habLabel(f.habitat) : '',
+    kode: f.kode, tipe: TIPE[f.type], lapisan: layerName(layerOf(f)), nama: f.nama || '', habitat_kode: f.habitat || '', habitat: f.habitat ? habLabel(f.habitat) : '',
     kondisi: (KONDISI.find(k => k[0] === f.kondisi) || ['', ''])[1], ancaman: (f.ancaman || []).map(a => (ANCAMAN.find(x => x[0] === a) || [a, a])[1]).join('; '),
     vegetasi: f.vegetasi || '', deskripsi: f.deskripsi || '', catatan: f.catatan || '', waktu: new Date(f.t * 1000).toISOString(),
     sumber: f.src === 'gps' ? (f.gps && f.gps.metode === 'rata-rata' ? `GPS HP rata-rata ${f.gps.n} bacaan` : 'GPS HP') : f.src === 'file' ? 'file' : 'digitasi peta',
@@ -1115,7 +1397,7 @@ function sorted() { return Object.values(S.features).sort((a, b) => a.t - b.t); 
 function toGeoJSON() { return { type: 'FeatureCollection', name: S.profile.proyek || 'peta_survei', features: sorted().map(f => ({ type: 'Feature', properties: props(f), geometry: geomOf(f) })) }; }
 function csvCell(v) { const s = v == null ? '' : String(v); return /[",\n\r;]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
 function toCSV(rows) { return '﻿' + rows.map(r => r.map(csvCell).join(',')).join('\r\n') + '\r\n'; }
-const CSV_KEYS = ['kode', 'tipe', 'nama', 'habitat_kode', 'habitat', 'kondisi', 'ancaman', 'vegetasi', 'deskripsi', 'catatan', 'waktu', 'sumber', 'akurasi_m', 'sebaran_m', 'panjang_m', 'luas_ha', 'lat', 'lon', 'utm_zona', 'utm_x', 'utm_y', 'jumlah_foto', 'foto', 'proyek', 'surveyor'];
+const CSV_KEYS = ['kode', 'tipe', 'lapisan', 'nama', 'habitat_kode', 'habitat', 'kondisi', 'ancaman', 'vegetasi', 'deskripsi', 'catatan', 'waktu', 'sumber', 'akurasi_m', 'sebaran_m', 'panjang_m', 'luas_ha', 'lat', 'lon', 'utm_zona', 'utm_x', 'utm_y', 'jumlah_foto', 'foto', 'proyek', 'surveyor'];
 function objekCSV() { return toCSV([CSV_KEYS, ...sorted().map(f => { const p = props(f); return CSV_KEYS.map(k => p[k] ?? ''); })]); }
 function fotoCSV() {
   const rows = [['file', 'kode_objek', 'habitat', 'waktu', 'lat', 'lon', 'akurasi_m', 'utm_zona', 'utm_x', 'utm_y', 'lebar_px', 'tinggi_px']];
@@ -1131,24 +1413,25 @@ function toGPX() {
 function kmlColor(hex, a) { const h = hex.replace('#', ''); return a + h.slice(4, 6) + h.slice(2, 4) + h.slice(0, 2); }
 function toKML(withImgs) {
   const styles = [...HABITAT, ['XX', 'Belum dipilih', '#777777']].map(([k, , c]) => `<Style id="h${k}"><IconStyle><color>${kmlColor(c, 'ff')}</color><scale>1.1</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/wht-blank.png</href></Icon></IconStyle><LineStyle><color>${kmlColor(c, 'ff')}</color><width>3</width></LineStyle><PolyStyle><color>${kmlColor(c, '55')}</color></PolyStyle></Style>`).join('\n');
-  const groups = {}; sorted().forEach(f => { const k = f.habitat || 'XX'; (groups[k] = groups[k] || []).push(f); });
+  const habFolders = fs => { const groups = {}; fs.forEach(f => { const k = f.habitat || 'XX'; (groups[k] = groups[k] || []).push(f); }); return Object.entries(groups).map(([k, list]) => `<Folder><name>${esc(k === 'XX' ? 'Belum dipilih' : habLabel(k))} (${list.length})</name>\n${list.map(pm).join('\n')}\n</Folder>`).join('\n'); };
   const pm = f => {
     const p = props(f);
-    const rows = [['Tipe', p.tipe], ['Habitat', p.habitat], ['Nama', p.nama], ['Kondisi', p.kondisi], ['Ancaman', p.ancaman], ['Vegetasi', p.vegetasi], ['Deskripsi', p.deskripsi], ['Catatan', p.catatan], ['Waktu', fmtTime(f.t)], ['UTM', `${p.utm_zona} ${Math.round(p.utm_x)} mT ${Math.round(p.utm_y)} mU`], ['Ketelitian', p.akurasi_m != null ? `±${p.akurasi_m} m` : ''], ['Panjang', p.panjang_m != null ? fmtLen(p.panjang_m) : ''], ['Luas', p.luas_ha != null ? fmtHa(p.luas_ha) : ''], ['Surveyor', p.surveyor]].filter(r => r[1]);
+    const rows = [['Tipe', p.tipe], ['Lapisan', S.layers.length > 1 ? p.lapisan : ''], ['Habitat', p.habitat], ['Nama', p.nama], ['Kondisi', p.kondisi], ['Ancaman', p.ancaman], ['Vegetasi', p.vegetasi], ['Deskripsi', p.deskripsi], ['Catatan', p.catatan], ['Waktu', fmtTime(f.t)], ['UTM', `${p.utm_zona} ${Math.round(p.utm_x)} mT ${Math.round(p.utm_y)} mU`], ['Ketelitian', p.akurasi_m != null ? `±${p.akurasi_m} m` : ''], ['Panjang', p.panjang_m != null ? fmtLen(p.panjang_m) : ''], ['Luas', p.luas_ha != null ? fmtHa(p.luas_ha) : ''], ['Surveyor', p.surveyor]].filter(r => r[1]);
     const desc = `<table>${rows.map(r => `<tr><td><b>${esc(r[0])}</b></td><td>${esc(r[1])}</td></tr>`).join('')}</table>` + (withImgs ? (f._photos || []).map(ph => `<p><img src="foto/${esc(ph.name)}" width="480"><br>${esc(ph.name)}</p>`).join('') : '');
     const c = f.type === 'point' ? `<Point><coordinates>${f.coords[1]},${f.coords[0]},0</coordinates></Point>`
       : f.type === 'line' ? `<LineString><tessellate>1</tessellate><coordinates>${f.coords.map(q => `${q[1]},${q[0]},0`).join(' ')}</coordinates></LineString>`
       : `<Polygon><outerBoundaryIs><LinearRing><coordinates>${[...f.coords, f.coords[0]].map(q => `${q[1]},${q[0]},0`).join(' ')}</coordinates></LinearRing></outerBoundaryIs></Polygon>`;
     return `<Placemark><name>${esc(f.kode)}${f.nama ? ' ' + esc(f.nama) : ''}</name><styleUrl>#h${f.habitat || 'XX'}</styleUrl><description><![CDATA[${desc}]]></description>${c}</Placemark>`;
   };
-  const folders = Object.entries(groups).map(([k, list]) => `<Folder><name>${esc(k === 'XX' ? 'Belum dipilih' : habLabel(k))} (${list.length})</name>\n${list.map(pm).join('\n')}\n</Folder>`).join('\n');
+  const used = S.layers.filter(l => sorted().some(f => layerOf(f) === l.id));
+  const folders = used.length > 1 ? used.map(l => `<Folder><name>${esc(l.name)}</name>\n${habFolders(sorted().filter(f => layerOf(f) === l.id))}\n</Folder>`).join('\n') : habFolders(sorted());
   return `<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${esc(S.profile.proyek || 'Peta Survei')} ${today()}</name>\n${styles}\n${folders}\n</Document></kml>\n`;
 }
 
 /* Shapefile ESRI: satu set .shp/.shx/.dbf/.prj/.cpg per jenis geometri, WGS 84, atribut UTF-8. */
 const PRJ_WGS84 = 'GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137.0,298.257223563]],PRIMEM["Greenwich",0.0],UNIT["Degree",0.0174532925199433]]';
 const DBF_FIELDS = [
-  ['KODE', 'C', 'kode'], ['TIPE', 'C', 'tipe'], ['NAMA', 'C', 'nama'], ['HAB_KODE', 'C', 'habitat_kode'], ['HABITAT', 'C', 'habitat'], ['KONDISI', 'C', 'kondisi'],
+  ['KODE', 'C', 'kode'], ['TIPE', 'C', 'tipe'], ['LAPISAN', 'C', 'lapisan'], ['NAMA', 'C', 'nama'], ['HAB_KODE', 'C', 'habitat_kode'], ['HABITAT', 'C', 'habitat'], ['KONDISI', 'C', 'kondisi'],
   ['ANCAMAN', 'C', 'ancaman'], ['VEGETASI', 'C', 'vegetasi'], ['DESKRIPSI', 'C', 'deskripsi'], ['CATATAN', 'C', 'catatan'], ['WAKTU', 'C', 'waktu'], ['SUMBER', 'C', 'sumber'],
   ['AKURASI_M', 'N', 'akurasi_m', 10, 1], ['SEBARAN_M', 'N', 'sebaran_m', 10, 2], ['PANJANG_M', 'N', 'panjang_m', 12, 0], ['LUAS_HA', 'N', 'luas_ha', 14, 4],
   ['UTM_ZONA', 'C', 'utm_zona'], ['UTM_X', 'N', 'utm_x', 12, 2], ['UTM_Y', 'N', 'utm_y', 12, 2], ['N_FOTO', 'N', 'jumlah_foto', 4, 0], ['FOTO', 'C', 'foto'], ['SURVEYOR', 'C', 'surveyor'],
@@ -1282,6 +1565,7 @@ $('importIn').addEventListener('change', ev => {
     let add = 0, upd = 0;
     Object.values(d.features).forEach(f => { const cur = S.features[f.id]; if (!cur) { S.features[f.id] = f; add++; } else if ((f.updated || 0) > (cur.updated || 0)) { S.features[f.id] = f; upd++; } });
     ['point', 'line', 'area'].forEach(t => { S.seq[t] = Math.max(S.seq[t] || 0, (d.seq && d.seq[t]) || 0); });
+    (d.layers || []).forEach(l => { if (l && l.id && !S.layers.some(x => x.id === l.id)) S.layers.push({ id: l.id, name: l.name || l.id, visible: true }); });
     save(); drawAll(); renderData(); toast(`Digabung: ${add} objek baru, ${upd} diperbarui`);
   }).catch(() => toast('File ini bukan cadangan Peta Survei (.json).'));
 });
@@ -1321,7 +1605,7 @@ $('refIn').addEventListener('change', ev => {
 });
 async function drawRefs(fit) {
   refLayer.clearLayers();
-  const refs = await pdbAll('ref').catch(() => []);
+  const refs = await pdbAll('ref').catch(() => []); REFS = refs;
   refs.filter(r => !hiddenRefs.has(r.id)).forEach(r => L.geoJSON(r.geojson, {
     style: { color: '#ffd400', weight: 3, dashArray: '8 6', fillOpacity: .05 },
     pointToLayer: (f, ll) => L.circleMarker(ll, { radius: 6, color: '#ffd400', weight: 2, fillColor: '#333', fillOpacity: .6 }),
@@ -1330,9 +1614,15 @@ async function drawRefs(fit) {
   if (fit && refLayer.getLayers().length) map.fitBounds(refLayer.getBounds().pad(0.1));
 }
 
-/* Peta offline: MBTiles (SQLite, dibaca dengan sql.js) atau ZIP berisi {z}/{x}/{y}.png|jpg. Tile disalin ke IndexedDB. */
+/* ================= Peta Saya: impor peta (seperti Avenza Maps) =================
+   GeoPDF, GeoTIFF, dan KMZ (GroundOverlay) dipotong menjadi tile di HP; MBTiles dan ZIP tile disalin langsung.
+   Semua tile disimpan di IndexedDB sehingga peta tampil tanpa sinyal. */
+const KIND_LABEL = { pdf: 'GeoPDF', tif: 'GeoTIFF', kmz: 'KMZ', mbtiles: 'MBTiles', zip: 'ZIP tile' };
 function tile2lon(x, z) { return x / 2 ** z * 360 - 180; }
 function tile2lat(y, z) { const n = Math.PI - 2 * Math.PI * y / 2 ** z; return 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))); }
+function lon2x(lon, z) { return (lon + 180) / 360 * 2 ** z; }
+function lat2y(lat, z) { const r = Math.max(-85.05, Math.min(85.05, lat)) * D2R; return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * 2 ** z; }
+function tileRange(b, z) { const n = 2 ** z; return [Math.max(0, Math.floor(lon2x(b[0], z))), Math.max(0, Math.floor(lat2y(b[3], z))), Math.min(n - 1, Math.floor(lon2x(b[2], z) - 1e-9)), Math.min(n - 1, Math.floor(lat2y(b[1], z) - 1e-9))]; }
 function mimeOf(u8, fmt) { if (u8[0] === 0x89 && u8[1] === 0x50) return 'image/png'; if (u8[0] === 0xff && u8[1] === 0xd8) return 'image/jpeg'; if (u8[8] === 0x57 && u8[9] === 0x45) return 'image/webp'; return fmt === 'png' ? 'image/png' : fmt === 'webp' ? 'image/webp' : 'image/jpeg'; }
 function progress(t, frac, s) { $('progress').hidden = false; $('progT').textContent = t; $('progBar').style.width = Math.round(frac * 100) + '%'; $('progS').textContent = s || ''; }
 function progressEnd() { $('progress').hidden = true; }
@@ -1341,12 +1631,11 @@ async function putTiles(batch) { await pdbDo('tiles', 'readwrite', st => { let r
 function newRange() { return { minz: 99, maxz: -1, byz: {} }; }
 function trackRange(rg, z, x, y) { rg.minz = Math.min(rg.minz, z); rg.maxz = Math.max(rg.maxz, z); const b = rg.byz[z] = rg.byz[z] || [Infinity, Infinity, -Infinity, -Infinity]; b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); }
 function boundsFrom(rg) { const z = rg.maxz, b = rg.byz[z]; return [tile2lon(b[0], z), tile2lat(b[3] + 1, z), tile2lon(b[2] + 1, z), tile2lat(b[1], z)]; }
+const scripts = {};
+function loadScript(src) { return scripts[src] = scripts[src] || new Promise((ok, fail) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => { delete scripts[src]; fail(new Error('pustaka')); }; document.head.appendChild(s); }); }
 let sqlP = null;
-function loadSQL() {
-  if (!sqlP) sqlP = new Promise((ok, fail) => { if (window.initSqlJs) { ok(); return; } const s = document.createElement('script'); s.src = 'vendor/sql-wasm.js'; s.onload = ok; s.onerror = fail; document.head.appendChild(s); })
-    .then(() => window.initSqlJs({ locateFile: f => 'vendor/' + f }));
-  return sqlP;
-}
+function loadSQL() { if (!sqlP) sqlP = loadScript('vendor/sql-wasm.js').then(() => window.initSqlJs({ locateFile: f => 'vendor/' + f })); return sqlP; }
+
 async function importMBTiles(file, id) {
   if (file.size > 400 * 1048576) toast('File besar: impor bisa lama dan butuh memori HP yang cukup.');
   progress('Membaca MBTiles…', 0, file.name);
@@ -1367,58 +1656,387 @@ async function importMBTiles(file, id) {
     if (!n) throw new Error('kosong');
     let bounds = meta.bounds ? String(meta.bounds).split(',').map(Number) : null;
     if (!bounds || bounds.length !== 4 || bounds.some(v => !isFinite(v))) bounds = boundsFrom(rg);
-    return { name: meta.name || file.name.replace(/\.mbtiles$/i, ''), minzoom: rg.minz, maxzoom: rg.maxz, bounds, count: n, bytes };
+    return { kind: 'mbtiles', name: meta.name || file.name.replace(/\.mbtiles$/i, ''), minzoom: rg.minz, maxzoom: rg.maxz, bounds, count: n, bytes };
   } finally { db.close(); }
 }
-async function importTileZip(file, id) {
-  progress('Membaca ZIP…', 0, file.name);
+
+/* ZIP: baca daftar isi lalu ambil entri satu per satu (tanpa memuat seluruh file ke memori). */
+async function zipEntries(file) {
   const tail = new DataView(await file.slice(Math.max(0, file.size - 65557)).arrayBuffer());
   let eocd = -1; for (let i = tail.byteLength - 22; i >= 0; i--) if (tail.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
   if (eocd < 0) throw new Error('bukan zip');
   const cdSize = tail.getUint32(eocd + 12, true), cdOff = tail.getUint32(eocd + 16, true);
   if (cdOff === 0xffffffff) throw new Error('zip64');
   const cd = new DataView(await file.slice(cdOff, cdOff + cdSize).arrayBuffer()), dec = new TextDecoder();
-  const entries = []; let p = 0;
+  const out = []; let p = 0;
   while (p + 46 <= cd.byteLength && cd.getUint32(p, true) === 0x02014b50) {
-    const method = cd.getUint16(p + 10, true), csize = cd.getUint32(p + 20, true), nlen = cd.getUint16(p + 28, true), xlen = cd.getUint16(p + 30, true), clen = cd.getUint16(p + 32, true), loff = cd.getUint32(p + 42, true);
-    const name = dec.decode(new Uint8Array(cd.buffer, p + 46, nlen));
-    const m = name.match(/(?:^|\/)(\d{1,2})\/(\d+)\/(\d+)\.(png|jpe?g|webp)$/i);
-    if (m) entries.push({ z: +m[1], x: +m[2], y: +m[3], method, csize, loff, ext: m[4].toLowerCase() });
+    const nlen = cd.getUint16(p + 28, true), xlen = cd.getUint16(p + 30, true), clen = cd.getUint16(p + 32, true);
+    out.push({ name: dec.decode(new Uint8Array(cd.buffer, p + 46, nlen)), method: cd.getUint16(p + 10, true), csize: cd.getUint32(p + 20, true), loff: cd.getUint32(p + 42, true) });
     p += 46 + nlen + xlen + clen;
   }
+  return out;
+}
+async function zipBlob(file, e, type) {
+  if (e.method !== 0 && e.method !== 8) throw new Error('zipmetode');
+  const lh = new DataView(await file.slice(e.loff, e.loff + 30).arrayBuffer());
+  const start = e.loff + 30 + lh.getUint16(26, true) + lh.getUint16(28, true);
+  let blob = file.slice(start, start + e.csize);
+  if (e.method === 8) blob = await new Response(blob.stream().pipeThrough(new DecompressionStream('deflate-raw'))).blob();
+  return new Blob([blob], { type: type || '' });
+}
+async function importTileZip(file, id, all) {
+  progress('Membaca ZIP…', 0, file.name);
+  const entries = [];
+  all.forEach(e => { const m = e.name.match(/(?:^|\/)(\d{1,2})\/(\d+)\/(\d+)\.(png|jpe?g|webp)$/i); if (m && (e.method === 0 || e.method === 8)) entries.push({ ...e, z: +m[1], x: +m[2], y: +m[3], ext: m[4].toLowerCase() }); });
   if (!entries.length) throw new Error('kosong');
   const rg = newRange(); let n = 0, bytes = 0, batch = [];
   for (const e of entries) {
-    if (e.method !== 0 && e.method !== 8) continue;
-    const lh = new DataView(await file.slice(e.loff, e.loff + 30).arrayBuffer());
-    const start = e.loff + 30 + lh.getUint16(26, true) + lh.getUint16(28, true);
-    let blob = file.slice(start, start + e.csize);
-    if (e.method === 8) blob = await new Response(blob.stream().pipeThrough(new DecompressionStream('deflate-raw'))).blob();
-    blob = new Blob([blob], { type: e.ext === 'png' ? 'image/png' : e.ext === 'webp' ? 'image/webp' : 'image/jpeg' });
+    const blob = await zipBlob(file, e, e.ext === 'png' ? 'image/png' : e.ext === 'webp' ? 'image/webp' : 'image/jpeg');
     batch.push([`${id}/${e.z}/${e.x}/${e.y}`, blob]); bytes += blob.size; n++; trackRange(rg, e.z, e.x, e.y);
     if (batch.length >= 250) { await putTiles(batch); batch = []; progress('Mengimpor peta offline…', n / entries.length, `${n.toLocaleString('id-ID')} / ${entries.length.toLocaleString('id-ID')} tile`); await yieldUI(); }
   }
   if (batch.length) await putTiles(batch);
-  if (!n) throw new Error('kosong');
-  return { name: file.name.replace(/\.zip$/i, ''), minzoom: rg.minz, maxzoom: rg.maxz, bounds: boundsFrom(rg), count: n, bytes };
+  return { kind: 'zip', name: file.name.replace(/\.zip$/i, ''), minzoom: rg.minz, maxzoom: rg.maxz, bounds: boundsFrom(rg), count: n, bytes };
 }
-$('mapIn').addEventListener('change', async ev => {
-  const file = ev.target.files[0]; ev.target.value = ''; if (!file) return;
+
+/* ---------- Pemotong raster: gambar bergeoreferensi → tile Web Mercator ----------
+   Setiap sumber: { img: kanvas, toPx(lon, lat) → [x, y] piksel, bbox [B, S, T, U], clip: poligon piksel (garis tepi peta) }.
+   Tiap tile digambar dengan transformasi afin dari tiga sudutnya; tingkat zoom rendah memakai versi gambar yang diperkecil. */
+const TILE_CAP = 15000;
+const PX_CAP = (navigator.deviceMemory && navigator.deviceMemory <= 2) ? 8e6 : 16e6;
+function makeCanvas(w, h) { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; }
+function halve(c) { const h = makeCanvas(c.width / 2, c.height / 2), x = h.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(c, 0, 0, h.width, h.height); return h; }
+function srcMPP(s) {
+  const lon = (s.bbox[0] + s.bbox[2]) / 2, lat = (s.bbox[1] + s.bbox[3]) / 2, d = (s.bbox[2] - s.bbox[0]) / 20 || 1e-4;
+  const a = s.toPx(lon, lat), b = s.toPx(lon + d, lat);
+  return hav([lat, lon], [lat, lon + d]) / Math.hypot(b[0] - a[0], b[1] - a[1]);
+}
+function canvasBlob(c, opaque) {
+  return new Promise(ok => c.toBlob(b => {
+    if (opaque || (b && b.type === 'image/webp')) ok(b); else c.toBlob(ok, 'image/png');
+  }, opaque ? 'image/jpeg' : 'image/webp', 0.85));
+}
+async function rasterToTiles(srcs, id, title) {
+  const bb = [Math.min(...srcs.map(s => s.bbox[0])), Math.min(...srcs.map(s => s.bbox[1])), Math.max(...srcs.map(s => s.bbox[2])), Math.max(...srcs.map(s => s.bbox[3]))];
+  if (!bb.every(isFinite) || bb[0] >= bb[2] || bb[1] >= bb[3] || bb[1] < -85 || bb[3] > 85) throw new Error('georef');
+  const lat = (bb[1] + bb[3]) / 2, k0 = 156543.034 * Math.cos(lat * D2R);
+  srcs.forEach(s => { s.mpp = srcMPP(s); });
+  const mpp = Math.min(...srcs.map(s => s.mpp));
+  if (!(mpp > 0) || !isFinite(mpp)) throw new Error('georef');
+  let maxz = Math.max(2, Math.min(21, Math.round(Math.log2(k0 / mpp))));
+  const cnt = z => { const r = tileRange(bb, z); return (r[2] - r[0] + 1) * (r[3] - r[1] + 1); };
+  let minz = maxz; while (minz > 1 && maxz - minz < 8 && cnt(minz) > 2) minz--;   // turun sampai seluruh peta muat dalam satu-dua tile
+  const total = () => { let t = 0; for (let z = minz; z <= maxz; z++) t += cnt(z); return t; };
+  while (total() > TILE_CAP && maxz > minz) maxz--;
+  if (total() > TILE_CAP) throw new Error('besar');
+  srcs.forEach(s => { s.levels = [s.img]; while (Math.max(s.levels[s.levels.length - 1].width, s.levels[s.levels.length - 1].height) > 256) s.levels.push(halve(s.levels[s.levels.length - 1])); });
+  const tc = makeCanvas(256, 256), ctx = tc.getContext('2d', { willReadFrequently: true });
+  const tot = total(); let done = 0, n = 0, bytes = 0, batch = [];
+  for (let z = maxz; z >= minz; z--) {
+    const r = tileRange(bb, z), tileM = k0 / 2 ** z;
+    for (let y = r[1]; y <= r[3]; y++) for (let x = r[0]; x <= r[2]; x++) {
+      done++;
+      const tb = [tile2lon(x, z), tile2lat(y + 1, z), tile2lon(x + 1, z), tile2lat(y, z)];
+      ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, 256, 256);
+      let drew = false;
+      for (const s of srcs) {
+        if (s.bbox[0] > tb[2] || s.bbox[2] < tb[0] || s.bbox[1] > tb[3] || s.bbox[3] < tb[1]) continue;
+        const lv = Math.max(0, Math.min(s.levels.length - 1, Math.floor(Math.log2(tileM / s.mpp) + 0.01)));
+        const Lc = s.levels[lv], sx = Lc.width / s.img.width, sy = Lc.height / s.img.height;
+        const p = (lo, la) => { const q = s.toPx(lo, la); return [q[0] * sx, q[1] * sy]; };
+        const P0 = p(tb[0], tb[3]), P1 = p(tb[2], tb[3]), P2 = p(tb[0], tb[1]);
+        const Ux = P1[0] - P0[0], Uy = P1[1] - P0[1], Vx = P2[0] - P0[0], Vy = P2[1] - P0[1], det = Ux * Vy - Vx * Uy;
+        if (!det || !isFinite(det)) continue;
+        const a = 256 * Vy / det, c = -256 * Vx / det, b = -256 * Uy / det, d = 256 * Ux / det;
+        ctx.save(); ctx.setTransform(a, b, c, d, -(a * P0[0] + c * P0[1]), -(b * P0[0] + d * P0[1]));
+        if (s.clip) { ctx.beginPath(); s.clip.forEach((q, i) => ctx[i ? 'lineTo' : 'moveTo'](q[0] * sx, q[1] * sy)); ctx.closePath(); ctx.clip(); }
+        ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(Lc, 0, 0); ctx.restore(); drew = true;
+      }
+      if (drew) {
+        const px = ctx.getImageData(0, 0, 256, 256).data; let any = false, opaque = true;
+        for (let i = 3; i < px.length; i += 4) { if (px[i]) any = true; if (px[i] < 250) opaque = false; if (any && !opaque) break; }
+        if (any) { const blob = await canvasBlob(tc, opaque); batch.push([`${id}/${z}/${x}/${y}`, blob]); bytes += blob.size; n++; }
+      }
+      if (batch.length >= 100) { await putTiles(batch); batch = []; }
+      if (done % 16 === 0) { progress(title, done / tot, `${done.toLocaleString('id-ID')} / ${tot.toLocaleString('id-ID')} tile · zoom ${z}`); await yieldUI(); }
+    }
+  }
+  if (batch.length) await putTiles(batch);
+  srcs.forEach(s => s.levels.forEach(c => { if (c.width) { c.width = 0; c.height = 0; } }));
+  if (!n) throw new Error('kosong');
+  return { minzoom: minz, maxzoom: maxz, count: n, bytes, bounds: bb };
+}
+
+/* ---------- Transformasi proyektif (homografi) dari titik kontrol ---------- */
+function solveLin(A, b) {
+  const n = b.length, M = A.map((r, i) => [...r, b[i]]);
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    if (Math.abs(M[p][c]) < 1e-12) return null;
+    [M[c], M[p]] = [M[p], M[c]];
+    for (let r = 0; r < n; r++) if (r !== c) { const f = M[r][c] / M[c][c]; for (let k = c; k <= n; k++) M[r][k] -= f * M[c][k]; }
+  }
+  return M.map((r, i) => r[n] / r[i]);
+}
+const mul3 = (A, B) => [0, 1, 2].flatMap(i => [0, 1, 2].map(j => A[i * 3] * B[j] + A[i * 3 + 1] * B[3 + j] + A[i * 3 + 2] * B[6 + j]));
+function inv3(m) {
+  const [a, b, c, d, e, f, g, h, i] = m, A = e * i - f * h, B = -(d * i - f * g), C = d * h - e * g, det = a * A + b * B + c * C;
+  return [A, -(b * i - c * h), b * f - c * e, B, a * i - c * g, -(a * f - c * d), C, -(a * h - b * g), a * e - b * d].map(v => v / det);
+}
+function applyH(H, x, y) { const w = H[6] * x + H[7] * y + H[8]; return [(H[0] * x + H[1] * y + H[2]) / w, (H[3] * x + H[4] * y + H[5]) / w]; }
+function normT(pts) { const n = pts.length, mx = pts.reduce((a, p) => a + p[0], 0) / n, my = pts.reduce((a, p) => a + p[1], 0) / n; const s = pts.reduce((a, p) => a + Math.hypot(p[0] - mx, p[1] - my), 0) / n || 1; return [1 / s, 0, -mx / s, 0, 1 / s, -my / s, 0, 0, 1]; }
+function fitH(src, dst) {
+  const Ts = normT(src), Td = normT(dst), S2 = src.map(p => applyH(Ts, p[0], p[1])), D2 = dst.map(p => applyH(Td, p[0], p[1]));
+  let h;
+  if (src.length >= 4) {
+    const AtA = Array.from({ length: 8 }, () => Array(8).fill(0)), Atb = Array(8).fill(0);
+    S2.forEach(([x, y], k) => { const [u, v] = D2[k]; [[[x, y, 1, 0, 0, 0, -x * u, -y * u], u], [[0, 0, 0, x, y, 1, -x * v, -y * v], v]].forEach(([r, t]) => { for (let i = 0; i < 8; i++) { Atb[i] += r[i] * t; for (let j = 0; j < 8; j++) AtA[i][j] += r[i] * r[j]; } }); });
+    const x = solveLin(AtA, Atb); if (!x) return null; h = [...x, 1];
+  } else if (src.length === 3) {
+    const x = solveLin(S2.flatMap(([x, y]) => [[x, y, 1, 0, 0, 0], [0, 0, 0, x, y, 1]]), D2.flatMap(p => p)); if (!x) return null; h = [...x, 0, 0, 1];
+  } else return null;
+  return mul3(inv3(Td), mul3(h, Ts));
+}
+
+/* ---------- GeoPDF (ISO 32000: /VP → /Measure /GEO dengan /GPTS, /LPTS, /Bounds) ---------- */
+function pdfReader(s) {
+  let i = 0;
+  const ws = c => c === 32 || c === 10 || c === 13 || c === 9 || c === 12 || c === 0;
+  function skip() { for (;;) { while (i < s.length && ws(s.charCodeAt(i))) i++; if (s[i] === '%') { while (i < s.length && s[i] !== '\n' && s[i] !== '\r') i++; } else break; } }
+  function val(depth) {
+    skip(); const ch = s[i];
+    if (depth > 60 || i >= s.length) return null;
+    if (ch === '<' && s[i + 1] === '<') { i += 2; const d = {}; for (;;) { skip(); if (i >= s.length) return d; if (s[i] === '>' && s[i + 1] === '>') { i += 2; return d; } const k = val(depth + 1), v = val(depth + 1); if (k && k.n != null) d[k.n] = v; } }
+    if (ch === '[') { i++; const a = []; for (;;) { skip(); if (i >= s.length) return a; if (s[i] === ']') { i++; return a; } a.push(val(depth + 1)); } }
+    if (ch === '(') { let dp = 0; const st = i; for (; i < s.length; i++) { const c = s[i]; if (c === '\\') { i++; continue; } if (c === '(') dp++; else if (c === ')' && --dp === 0) { i++; break; } } return { s: s.slice(st + 1, i - 1) }; }
+    if (ch === '<') { const e = s.indexOf('>', i); i = e < 0 ? s.length : e + 1; return { hex: true }; }
+    if (ch === '/') { const m = /^\/[^\s\/\[\]<>(){}%]*/.exec(s.slice(i, i + 128)); i += m[0].length; return { n: m[0].slice(1) }; }
+    const m = /^[+-]?(\d+\.?\d*|\.\d+)/.exec(s.slice(i, i + 40));
+    if (m) { i += m[0].length; if (/^\d+$/.test(m[0])) { const r = /^\s+(\d+)\s+R(?![A-Za-z])/.exec(s.slice(i, i + 30)); if (r) { i += r[0].length; return { ref: +m[0] }; } } return +m[0]; }
+    const w = /^[A-Za-z]+/.exec(s.slice(i, i + 16)); if (w) { i += w[0].length; return w[0] === 'true' ? true : w[0] === 'false' ? false : null; }
+    i++; return null;
+  }
+  return { at(p) { i = p; return val(0); }, get pos() { return i; } };
+}
+async function inflate(u8) { return new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(new DecompressionStream('deflate'))).arrayBuffer()); }
+async function pdfGeoref(buf) {
+  const latin = u8 => { let o = ''; for (let k = 0; k < u8.length; k += 32768) o += String.fromCharCode.apply(null, u8.subarray(k, k + 32768)); return o; };
+  const s = latin(buf), R = pdfReader(s), plain = new Map(), packed = new Map();
+  const re = /(\d+)\s+(\d+)\s+obj\b/g; let m;
+  while ((m = re.exec(s))) plain.set(+m[1], m.index + m[0].length);
+  const get = n => { if (plain.has(n)) return R.at(plain.get(n)); const p = packed.get(n); return p ? pdfReader(p.text).at(p.at) : null; };
+  const res = v => { for (let k = 0; k < 8 && v && v.ref != null; k++) v = get(v.ref); return v; };
+  for (const [, at] of plain) {
+    if (!/\/Type\s*\/ObjStm/.test(s.slice(at, at + 600))) continue;
+    try {
+      const d = R.at(at); let p = R.pos; const sm = /^\s*stream\r?\n/.exec(s.slice(p, p + 20)); if (!sm) continue; p += sm[0].length;
+      let len = res(d.Length); if (typeof len !== 'number') { len = s.indexOf('endstream', p) - p; while (len > 0 && /[\r\n]/.test(s[p + len - 1])) len--; }
+      let data = buf.subarray(p, p + len); const flt = res(d.Filter), fl = Array.isArray(flt) ? flt.map(x => x && x.n) : [flt && flt.n];
+      if (fl.includes('FlateDecode')) data = await inflate(data); else if (fl[0]) continue;
+      const text = latin(data), first = d.First, hdr = text.slice(0, first).trim().split(/\s+/).map(Number);
+      for (let k = 0; k + 1 < hdr.length && k / 2 < d.N; k += 2) if (!plain.has(hdr[k])) packed.set(hdr[k], { text, at: first + hdr[k + 1] });
+    } catch (e) {}
+  }
+  // Halaman pertama: Catalog → Pages → Kids[0] …
+  let page = null;
+  const isType = (n, t) => { const o = res({ ref: n }); return o && o.Type && o.Type.n === t ? o : null; };
+  for (const n of [...plain.keys(), ...packed.keys()]) { const cat = isType(n, 'Catalog'); if (!cat) continue; let node = res(cat.Pages); for (let k = 0; k < 30 && node && node.Type && node.Type.n === 'Pages'; k++) node = res((res(node.Kids) || [])[0]); if (node && node.Type && node.Type.n === 'Page') { page = node; break; } }
+  if (!page) for (const n of [...plain.keys(), ...packed.keys()]) { const o = isType(n, 'Page'); if (o && o.VP) { page = o; break; } }
+  if (!page) return { err: 'nogeo' };
+  const vps = (res(page.VP) || []).map(res).filter(v => v && res(v.Measure));
+  if (!vps.length) return { err: page.LGIDict ? 'lgi' : 'nogeo' };
+  const nums = a => (res(a) || []).map(res).map(Number);
+  let best = null;
+  for (const vp of vps) {
+    const me2 = res(vp.Measure); if (!me2 || (me2.Subtype && me2.Subtype.n !== 'GEO')) continue;
+    const bbox = nums(vp.BBox), g = nums(me2.GPTS), l = nums(me2.LPTS), bnd = me2.Bounds ? nums(me2.Bounds) : [0, 0, 0, 1, 1, 1, 1, 0];
+    if (bbox.length !== 4 || g.length < 6 || l.length !== g.length) continue;
+    const area = Math.abs((bbox[2] - bbox[0]) * (bbox[3] - bbox[1]));
+    if (!best || area > best.area) best = { bbox, g, l, bnd, area };
+  }
+  if (!best) return { err: 'nogeo' };
+  const [x0, y0, x1, y1] = best.bbox, unit = (u, v) => [x0 + u * (x1 - x0), y0 + v * (y1 - y0)];
+  const ll = [], pg = [];
+  for (let k = 0; k < best.g.length; k += 2) { ll.push([best.g[k + 1], best.g[k]]); pg.push(unit(best.l[k], best.l[k + 1])); }   // GPTS: lintang, bujur
+  if (ll.some(([lo, la]) => !isFinite(lo) || !isFinite(la) || Math.abs(la) > 90 || Math.abs(lo) > 180)) return { err: 'nogeo' };
+  const H = fitH(ll, pg); if (!H) return { err: 'nogeo' };
+  const neat = []; for (let k = 0; k + 1 < best.bnd.length; k += 2) neat.push(unit(best.bnd[k], best.bnd[k + 1]));
+  return { H, Hi: inv3(H), neat };
+}
+async function importGeoPDF(file, id) {
+  progress('Membaca GeoPDF…', 0.02, file.name);
+  const buf = new Uint8Array(await file.arrayBuffer());
+  const geo = await pdfGeoref(buf);
+  if (geo.err) throw new Error(geo.err === 'lgi' ? 'pdflgi' : 'pdfnogeo');
+  await loadScript('vendor/pdf.min.js');
+  const lib = window.pdfjsLib; lib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+  const doc = await lib.getDocument({ data: buf, isEvalSupported: false, useSystemFonts: true }).promise;
+  try {
+    const page = await doc.getPage(1), v1 = page.getViewport({ scale: 1 });
+    const neat1 = geo.neat.map(([x, y]) => v1.convertToViewportPoint(x, y));
+    const bx0 = Math.min(...neat1.map(p => p[0])), bx1 = Math.max(...neat1.map(p => p[0])), by0 = Math.min(...neat1.map(p => p[1])), by1 = Math.max(...neat1.map(p => p[1]));
+    const bw = bx1 - bx0, bh = by1 - by0;
+    const scale = Math.min(6, Math.sqrt(PX_CAP / (bw * bh)), 8192 / Math.max(bw, bh));
+    const vp = page.getViewport({ scale, offsetX: -bx0 * scale, offsetY: -by0 * scale });
+    const cv = makeCanvas(bw * scale, bh * scale);
+    progress('Menggambar halaman peta…', 0.05, `${cv.width} × ${cv.height} piksel`);
+    await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+    const T = vp.transform, toVP = (x, y) => [T[0] * x + T[2] * y + T[4], T[1] * x + T[3] * y + T[5]];
+    const footprint = geo.neat.map(([x, y]) => applyH(geo.Hi, x, y));
+    const bbox = [Math.min(...footprint.map(p => p[0])), Math.min(...footprint.map(p => p[1])), Math.max(...footprint.map(p => p[0])), Math.max(...footprint.map(p => p[1]))];
+    const src = { img: cv, bbox, clip: geo.neat.map(([x, y]) => toVP(x, y)), toPx: (lon, lat) => { const q = applyH(geo.H, lon, lat); return toVP(q[0], q[1]); } };
+    const info = await rasterToTiles([src], id, 'Memotong GeoPDF menjadi tile…');
+    return { kind: 'pdf', name: file.name.replace(/\.pdf$/i, ''), ...info, bounds: bbox, footprint };
+  } finally { doc.destroy(); }
+}
+
+/* ---------- GeoTIFF (drone, citra satelit, peta hasil QGIS) ---------- */
+function crsDef(code) {
+  if (code === 4326 || code === 4269 || code === 4258 || code === 4755) return 'EPSG:4326';   // WGS 84 / DGN95 (selisih < 1 m)
+  if (code === 3857 || code === 900913 || code === 3785 || code === 102100) return 'EPSG:3857';
+  if (code >= 32601 && code <= 32660) return `+proj=utm +zone=${code - 32600} +datum=WGS84 +units=m +no_defs`;
+  if (code >= 32701 && code <= 32760) return `+proj=utm +zone=${code - 32700} +south +datum=WGS84 +units=m +no_defs`;
+  if (code >= 23866 && code <= 23872) return `+proj=utm +zone=${code - 23820} +ellps=WGS84 +units=m +no_defs`;   // DGN95 / UTM 46N–52N
+  if (code >= 23877 && code <= 23884) return `+proj=utm +zone=${code - 23830} +south +ellps=WGS84 +units=m +no_defs`;   // DGN95 / UTM 47S–54S
+  if (code >= 23830 && code <= 23845) return `+proj=tmerc +lat_0=0 +lon_0=${94.5 + 3 * (code - 23830)} +k=0.9999 +x_0=200000 +y_0=1500000 +ellps=WGS84 +units=m +no_defs`;   // DGN95 / TM-3
+  return null;
+}
+async function importGeoTIFF(file, id) {
+  progress('Membaca GeoTIFF…', 0.02, file.name);
+  await loadScript('vendor/geotiff.js'); await loadScript('vendor/proj4.js');
+  const tiff = await window.GeoTIFF.fromBlob(file), img = await tiff.getImage();
+  const W = img.getWidth(), Hh = img.getHeight(), gk = img.getGeoKeys() || {}, fd = img.fileDirectory;
+  if (!fd.ModelTiepoint && !fd.ModelTransformation) throw new Error('tifnogeo');
+  const code = gk.ProjectedCSTypeGeoKey && gk.ProjectedCSTypeGeoKey !== 32767 ? gk.ProjectedCSTypeGeoKey : gk.GTModelTypeGeoKey === 2 || !gk.ProjectedCSTypeGeoKey ? (gk.GeographicTypeGeoKey && gk.GeographicTypeGeoKey !== 32767 ? gk.GeographicTypeGeoKey : 4326) : null;
+  const def = crsDef(code); if (!def) throw new Error('tifcrs:' + code);
+  if (fd.ModelTransformation && (fd.ModelTransformation[1] || fd.ModelTransformation[4])) throw new Error('tifrot');
+  const [ox, oy] = img.getOrigin(), [rx, ry] = img.getResolution();
+  const k = Math.min(1, Math.sqrt(PX_CAP / (W * Hh)), 8192 / Math.max(W, Hh)), w = Math.max(1, Math.round(W * k)), h = Math.max(1, Math.round(Hh * k));
+  progress('Membaca piksel GeoTIFF…', 0.05, `${W} × ${Hh} → ${w} × ${h} piksel`);
+  const bands = await tiff.readRasters({ width: w, height: h, resampleMethod: 'bilinear' });
+  const nb = bands.length, nd = img.getGDALNoData(), pm = fd.PhotometricInterpretation, cmap = fd.ColorMap, bits = (fd.BitsPerSample || [8])[0];
+  const rgba = new Uint8ClampedArray(w * h * 4);
+  const stretch = arr => { if (bits === 8 && !(arr instanceof Float32Array) && !(arr instanceof Float64Array)) return v => v; const smp = []; for (let i = 0; i < arr.length; i += Math.max(1, Math.floor(arr.length / 20000))) { const v = arr[i]; if (isFinite(v) && v !== nd) smp.push(v); } smp.sort((a, b) => a - b); const lo = smp[Math.floor(smp.length * 0.02)] || 0, hi = smp[Math.floor(smp.length * 0.98)] || 1; return v => (v - lo) / ((hi - lo) || 1) * 255; };
+  const alphaBand = (nb === 4 || nb === 2) && (fd.ExtraSamples != null || bits === 8) ? bands[nb - 1] : null;
+  if (pm === 3 && cmap) {
+    const b = bands[0], n3 = cmap.length / 3;
+    for (let i = 0; i < w * h; i++) { const v = b[i]; rgba[i * 4] = cmap[v] >> 8; rgba[i * 4 + 1] = cmap[n3 + v] >> 8; rgba[i * 4 + 2] = cmap[2 * n3 + v] >> 8; rgba[i * 4 + 3] = v === nd ? 0 : 255; }
+  } else {
+    const rgb = nb >= 3 ? [bands[0], bands[1], bands[2]] : [bands[0], bands[0], bands[0]], f = rgb.map(stretch);
+    for (let i = 0; i < w * h; i++) {
+      const r = rgb[0][i], g = rgb[1][i], b = rgb[2][i];
+      rgba[i * 4] = f[0](r); rgba[i * 4 + 1] = f[1](g); rgba[i * 4 + 2] = f[2](b);
+      rgba[i * 4 + 3] = (nd != null && r === nd && g === nd && b === nd) || !isFinite(r) ? 0 : alphaBand ? (bits === 8 ? alphaBand[i] : alphaBand[i] ? 255 : 0) : 255;
+    }
+  }
+  const cv = makeCanvas(w, h); cv.getContext('2d').putImageData(new ImageData(rgba, w, h), 0, 0);
+  const P = window.proj4, fwd = def === 'EPSG:4326' ? null : P('EPSG:4326', def);
+  const toCRS = (lon, lat) => fwd ? fwd.forward([lon, lat]) : [lon, lat], toLL = (x, y) => fwd ? fwd.inverse([x, y]) : [x, y];
+  const edge = []; for (let t = 0; t < 8; t++) edge.push([t / 8, 0]); for (let t = 0; t < 8; t++) edge.push([1, t / 8]); for (let t = 0; t < 8; t++) edge.push([1 - t / 8, 1]); for (let t = 0; t < 8; t++) edge.push([0, 1 - t / 8]);
+  const footprint = edge.map(([u, v]) => toLL(ox + u * W * rx, oy + v * Hh * ry));
+  if (footprint.some(p => !isFinite(p[0]) || !isFinite(p[1]))) throw new Error('georef');
+  const bbox = [Math.min(...footprint.map(p => p[0])), Math.min(...footprint.map(p => p[1])), Math.max(...footprint.map(p => p[0])), Math.max(...footprint.map(p => p[1]))];
+  const src = { img: cv, bbox, clip: null, toPx: (lon, lat) => { const [X, Y] = toCRS(lon, lat); return [(X - ox) / rx * (w / W), (Y - oy) / ry * (h / Hh)]; } };
+  const info = await rasterToTiles([src], id, 'Memotong GeoTIFF menjadi tile…');
+  return { kind: 'tif', name: file.name.replace(/\.tiff?$/i, ''), ...info, bounds: bbox, footprint };
+}
+
+/* ---------- KMZ: GroundOverlay (Google Earth, Garmin Custom Maps, ekspor QGIS/Avenza) ---------- */
+async function importKMZ(file, id, entries) {
+  progress('Membaca KMZ…', 0.02, file.name);
+  const kmlE = entries.find(e => /(^|\/)doc\.kml$/i.test(e.name)) || entries.find(e => /\.kml$/i.test(e.name));
+  const doc = new DOMParser().parseFromString(await (await zipBlob(file, kmlE)).text(), 'application/xml');
+  const tag = (el, n) => [...el.getElementsByTagNameNS('*', n)], txt = (el, n) => { const x = tag(el, n)[0]; return x ? x.textContent.trim() : ''; };
+  const ovs = tag(doc, 'GroundOverlay');
+  if (!ovs.length) throw new Error(tag(doc, 'Placemark').length ? 'kmzobj' : 'kosong');
+  const dir = kmlE.name.includes('/') ? kmlE.name.replace(/[^/]+$/, '') : '';
+  const srcs = [];
+  for (const [k, ov] of ovs.entries()) {
+    progress('Membaca gambar KMZ…', 0.02 + 0.08 * k / ovs.length, `${k + 1} / ${ovs.length}`);
+    const href = txt(tag(ov, 'Icon')[0] || ov, 'href'); if (!href) continue;
+    const want = decodeURIComponent(href).replace(/^\.\//, ''), ent = entries.find(e => e.name === dir + want) || entries.find(e => e.name === want) || entries.find(e => e.name.endsWith('/' + want.split('/').pop()) || e.name === want.split('/').pop());
+    if (!ent) continue;
+    const bmp = await createImageBitmap(await zipBlob(file, ent));
+    const sc = Math.min(1, 8192 / Math.max(bmp.width, bmp.height), Math.sqrt(PX_CAP / ovs.length / (bmp.width * bmp.height)));
+    const cv = makeCanvas(bmp.width * sc, bmp.height * sc); cv.getContext('2d').drawImage(bmp, 0, 0, cv.width, cv.height); bmp.close && bmp.close();
+    const W = cv.width, H = cv.height, quad = tag(ov, 'LatLonQuad')[0];
+    let toPx, foot;
+    if (quad) {
+      foot = txt(quad, 'coordinates').split(/\s+/).map(c => c.split(',').map(Number)).filter(a => a.length >= 2).map(a => [a[0], a[1]]);
+      if (foot.length !== 4) continue;
+      const Hm = fitH(foot, [[0, H], [W, H], [W, 0], [0, 0]]); if (!Hm) continue;
+      toPx = (lon, lat) => applyH(Hm, lon, lat);
+    } else {
+      const box = tag(ov, 'LatLonBox')[0]; if (!box) continue;
+      const n = +txt(box, 'north'), s = +txt(box, 'south'), e = +txt(box, 'east'), w = +txt(box, 'west'), rot = (+txt(box, 'rotation') || 0) * D2R;
+      if (![n, s, e, w].every(isFinite) || n <= s || e === w) continue;
+      const cx = (e + w) / 2, cy = (n + s) / 2, cr = Math.cos(rot), sr = Math.sin(rot);
+      toPx = (lon, lat) => { const dx = lon - cx, dy = lat - cy, ux = dx * cr + dy * sr, uy = -dx * sr + dy * cr; return [(cx + ux - w) / (e - w) * W, (n - (cy + uy)) / (n - s) * H]; };
+      foot = [[w, s], [e, s], [e, n], [w, n]].map(([x, y]) => { const dx = x - cx, dy = y - cy; return [cx + dx * cr - dy * sr, cy + dx * sr + dy * cr]; });
+    }
+    srcs.push({ img: cv, toPx, foot, order: +txt(ov, 'drawOrder') || 0, bbox: [Math.min(...foot.map(p => p[0])), Math.min(...foot.map(p => p[1])), Math.max(...foot.map(p => p[0])), Math.max(...foot.map(p => p[1]))] });
+  }
+  if (!srcs.length) throw new Error('kosong');
+  srcs.sort((a, b) => a.order - b.order);
+  const name = txt(doc.getElementsByTagNameNS('*', 'Document')[0] || doc, 'name') || file.name.replace(/\.kmz$/i, '');
+  const info = await rasterToTiles(srcs, id, 'Memotong KMZ menjadi tile…');
+  return { kind: 'kmz', name: srcs.length === 1 || name.length > 80 ? file.name.replace(/\.kmz$/i, '') : name, ...info, footprint: srcs.length === 1 ? srcs[0].foot : null };
+}
+
+/* Gambar mini peta untuk daftar Peta Saya, disusun dari tile zoom terendah. */
+async function makeThumb(m) {
+  const z = m.minzoom, r = tileRange(m.bounds, z), nx = Math.min(4, r[2] - r[0] + 1), ny = Math.min(4, r[3] - r[1] + 1);
+  const x0 = Math.max(r[0], Math.floor((r[0] + r[2]) / 2 - nx / 2 + 1)), y0 = Math.max(r[1], Math.floor((r[1] + r[3]) / 2 - ny / 2 + 1));
+  const cv = makeCanvas(nx * 256, ny * 256), ctx = cv.getContext('2d'); ctx.fillStyle = '#eef2f3'; ctx.fillRect(0, 0, cv.width, cv.height);
+  let any = false;
+  for (let y = 0; y < ny; y++) for (let x = 0; x < nx; x++) { const b = await pdbGet('tiles', `${m.id}/${z}/${x0 + x}/${y0 + y}`).catch(() => null); if (!b) continue; try { const im = await createImageBitmap(b); ctx.drawImage(im, x * 256, y * 256); any = true; } catch (e) {} }
+  if (!any) return null;
+  const px = (lon, lat) => [(lon2x(lon, z) - x0) * 256, (lat2y(lat, z) - y0) * 256];
+  const a = px(m.bounds[0], m.bounds[3]), b = px(m.bounds[2], m.bounds[1]);
+  const cx0 = Math.max(0, a[0]), cy0 = Math.max(0, a[1]), cw = Math.min(cv.width, b[0]) - cx0, ch = Math.min(cv.height, b[1]) - cy0;
+  const side = Math.max(1, Math.min(cw, ch)), out = makeCanvas(160, 160), o = out.getContext('2d');
+  o.fillStyle = '#eef2f3'; o.fillRect(0, 0, 160, 160);
+  o.drawImage(cv, cx0 + (cw - side) / 2, cy0 + (ch - side) / 2, side, side, 0, 0, 160, 160);
+  return new Promise(ok => out.toBlob(ok, 'image/jpeg', 0.8));
+}
+
+const IMPORT_ERR = {
+  format: 'Format tidak dikenali. Pilih GeoPDF (.pdf), GeoTIFF (.tif), KMZ, MBTiles, atau ZIP tile.',
+  'bukan zip': 'File ZIP rusak atau tidak lengkap.', zip64: 'ZIP terlalu besar (ZIP64). Pakai MBTiles atau pecah per tingkat zoom.', zipmetode: 'ZIP memakai kompresi yang tidak didukung.',
+  kosong: 'Tidak ada gambar peta di file ini.', georef: 'Georeferensi peta tidak valid.',
+  besar: 'Peta terlalu luas untuk resolusinya. Potong area peta lebih kecil lalu coba lagi.',
+  pdfnogeo: 'PDF ini tidak memiliki georeferensi. Ekspor ulang sebagai GeoPDF (QGIS: Export Map to PDF → centang "Create Geospatial PDF").',
+  pdflgi: 'GeoPDF format lama (OGC LGIDict) belum didukung. Ekspor ulang dari QGIS/ArcGIS dengan georeferensi ISO 32000.',
+  tifnogeo: 'TIFF ini tidak memiliki georeferensi (bukan GeoTIFF).', tifrot: 'GeoTIFF dengan rotasi belum didukung. Warp ulang di QGIS (Raster → Projections → Warp).',
+  kmzobj: 'KMZ ini berisi objek (titik/garis), bukan gambar peta. Tambahkan lewat tab Data → Layer acuan.',
+  pustaka: 'Pustaka pembaca peta belum tersimpan di HP. Buka aplikasi sekali saat ada sinyal, lalu coba lagi.',
+};
+async function importMapFile(file) {
   const id = rid(); closeFloating();
   try {
-    const head = new Uint8Array(await file.slice(0, 16).arrayBuffer());
-    const isSqlite = new TextDecoder().decode(head).startsWith('SQLite format 3'), isZip = head[0] === 0x50 && head[1] === 0x4b;
-    if (!isSqlite && !isZip) throw new Error('format');
-    const info = isSqlite ? await importMBTiles(file, id) : await importTileZip(file, id);
-    const m = { id, ...info, created: Date.now() };
+    const head = new Uint8Array(await file.slice(0, 1024).arrayBuffer()), h8 = String.fromCharCode(...head.slice(0, 16));
+    const isPdf = String.fromCharCode(...head).includes('%PDF'), isTiff = h8.startsWith('II*\0') || h8.startsWith('MM\0*') || h8.startsWith('II+\0') || h8.startsWith('MM\0+');
+    const isSqlite = h8.startsWith('SQLite format 3'), isZip = head[0] === 0x50 && head[1] === 0x4b;
+    if (!isPdf && !isTiff && !isSqlite && !isZip) throw new Error('format');
+    let info;
+    if (isPdf) info = await importGeoPDF(file, id);
+    else if (isTiff) info = await importGeoTIFF(file, id);
+    else if (isSqlite) info = await importMBTiles(file, id);
+    else { const ents = await zipEntries(file); info = ents.some(e => /\.kml$/i.test(e.name)) && !ents.some(e => /(?:^|\/)\d{1,2}\/\d+\/\d+\.(png|jpe?g|webp)$/i.test(e.name)) ? await importKMZ(file, id, ents) : await importTileZip(file, id, ents); }
+    const m = { id, ...info, src: file.name, size: file.size, created: Date.now() };
+    progress('Menyimpan…', 1, '');
+    m.thumb = await makeThumb(m).catch(() => null);
     await pdbPut('maps', id, m); MAPS = await pdbAll('maps');
-    progressEnd(); setBase('off:' + id); showTab('map'); zoomToMap(m);
-    toast(`Peta offline siap: ${m.count.toLocaleString('id-ID')} tile, zoom ${m.minzoom}–${m.maxzoom}`);
+    progressEnd(); openMap(m);
+    toast(`Peta siap dipakai tanpa sinyal: ${m.name} (zoom ${m.minzoom}–${m.maxzoom}, ${fmtMB(m.bytes)})`);
   } catch (e) {
     progressEnd(); await deleteMap(id, true);
-    toast(e.message === 'format' || e.message === 'bukan zip' ? 'Pilih file .mbtiles atau .zip berisi folder tile {z}/{x}/{y}.' : e.message === 'zip64' ? 'ZIP terlalu besar (ZIP64). Pakai MBTiles atau pecah per tingkat zoom.' : e.message === 'kosong' ? 'Tidak ada tile di file ini.' : 'Gagal mengimpor peta: ' + (e.message || e));
+    const msg = String(e && e.message || e), k = msg.split(':')[0];
+    toast(k === 'tifcrs' ? `Sistem koordinat GeoTIFF (EPSG:${msg.split(':')[1]}) belum didukung. Warp ulang ke WGS 84 / UTM di QGIS.` : IMPORT_ERR[k] || 'Gagal mengimpor peta: ' + msg);
   }
-});
+}
+$('mapIn').addEventListener('change', ev => { const file = ev.target.files[0]; ev.target.value = ''; if (file) importMapFile(file); });
 async function deleteMap(id, silent) {
   await pdbDo('tiles', 'readwrite', st => st.delete(IDBKeyRange.bound(id + '/', id + '/￿'))).catch(() => {});
   await pdbDel('maps', id).catch(() => {});
@@ -1491,7 +2109,7 @@ window.addEventListener('beforeunload', ev => { if (REC) { save(); ev.preventDef
   drawAll(); drawRefs(false); startWatch(); updateHud();
   try {
     const tab = sessionStorage.getItem('peta-survei-tab'); sessionStorage.removeItem('peta-survei-tab');
-    showTab(tab || 'map');
+    showTab(tab || pref('tab', MAPS.length ? 'lib' : 'map'));
     if (sessionStorage.getItem('peta-survei-updated')) { sessionStorage.removeItem('peta-survei-updated'); toast('Aplikasi diperbarui ke versi terbaru'); }
     const lost = JSON.parse(sessionStorage.getItem('peta-survei-rec') || 'null');
     if (lost && lost.length > 1) { sessionStorage.removeItem('peta-survei-rec'); const f = newFeature('line', lost, { src: 'gps' }); toast(`Rekaman jalur sebelumnya dipulihkan (${fmtLen(lineLen(lost))}).`); openSheet(f.id); }

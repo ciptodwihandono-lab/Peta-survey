@@ -1,7 +1,7 @@
 # Peta Survei
 
 Aplikasi pemetaan lapangan untuk HP, setara aplikasi GIS lapangan seperti
-QField, SW Maps, atau Locus GIS, dalam bahasa Indonesia. Bekerja **tanpa
+QField, SW Maps, Locus GIS, atau Avenza Maps, dalam bahasa Indonesia. Bekerja **tanpa
 sinyal** setelah dibuka sekali, dan memperbarui diri sendiri saat ada sinyal.
 
 Alamat: https://ciptodwihandono-lab.github.io/Peta-survey/
@@ -15,6 +15,35 @@ muncul di daftar aplikasi HP, terbuka layar penuh, dan bisa dipakai tanpa sinyal
 Di iPhone: Safari → Bagikan → Tambahkan ke Layar Utama.
 
 ## Fitur
+
+**Peta Saya (seperti Avenza Maps)**
+- Tab **Peta Saya**: pustaka peta di HP dengan gambar mini, jenis, tingkat zoom,
+  ukuran, dan status posisi: "Anda di dalam peta ini" atau jarak dan arah ke peta.
+  Urutkan menurut terdekat, terbaru, atau nama; cari nama peta; ganti nama; hapus.
+- **Impor GeoPDF** (ISO 32000: QGIS "Create Geospatial PDF", ArcGIS "Export
+  georeference information", peta RBI): halaman digambar dengan PDF.js, dipotong
+  sesuai garis tepi peta (legenda dan judul di luar bingkai tidak ikut), lalu
+  dijadikan tile.
+- **Impor GeoTIFF** (ortofoto drone, citra satelit): WGS 84, Web Mercator,
+  UTM WGS 84 utara/selatan, DGN95 UTM dan TM-3. Nilai *nodata* menjadi transparan;
+  data 16-bit/float diregangkan otomatis.
+- **Impor KMZ** berisi GroundOverlay (Google Earth, Garmin Custom Maps), termasuk
+  rotasi dan `gx:LatLonQuad`.
+- Penanda peta aktif di layar peta: nama peta dan **"Di luar peta · jarak arah"**.
+
+**Pencarian**
+- Tombol kaca pembesar di layar peta. Mencari objek survei (kode, nama, habitat,
+  vegetasi, catatan, lapisan), nama peta, nama objek di layer acuan, dan
+  **koordinat** yang diketik: desimal (`-1.17, 104.37`), derajat-menit-detik
+  (`1°10'12" LS 104°22'12" BT`), atau UTM (`48M 429910 9870672`).
+- Nama tempat (desa, sungai, pantai) lewat OpenStreetMap saat ada sinyal.
+- Hasil ditandai di peta dengan tombol **Simpan sebagai titik** dan **Navigasi**.
+
+**Lapisan objek**
+- Kelompokkan objek per kegiatan, hari, atau tim. Objek baru masuk ke lapisan
+  aktif; tiap lapisan bisa ditampilkan/disembunyikan, diganti nama, dihapus
+  (objeknya dipindah). Kolom `lapisan` ikut di CSV, GeoJSON, Shapefile
+  (`LAPISAN`), dan folder KML.
 
 **Peta dan peta offline**
 - Peta dasar online: citra satelit Esri World Imagery atau OpenStreetMap.
@@ -79,8 +108,14 @@ Sentinel-2 (lisensi terbuka) paling aman.
 
 ## Catatan teknis
 
-- `index.html` satu file, dengan `vendor/leaflet.js` (Leaflet 1.9.4, BSD-2) dan
-  `vendor/sql-wasm.js|.wasm` (sql.js 1.10.3, MIT; dimuat hanya saat impor MBTiles).
+- `index.html` satu file, dengan `vendor/leaflet.js` (Leaflet 1.9.4, BSD-2). Pustaka
+  impor dimuat hanya saat dipakai: `vendor/sql-wasm.js|.wasm` (sql.js 1.10.3, MIT),
+  `vendor/pdf.min.js|pdf.worker.min.js` (PDF.js 3.11.174, Apache-2.0),
+  `vendor/geotiff.js` (geotiff.js 2.1.3, MIT), `vendor/proj4.js` (proj4js 2.11.0, MIT).
+- Georeferensi GeoPDF dibaca langsung dari `/VP` → `/Measure` (`/GPTS`, `/LPTS`,
+  `/Bounds`), termasuk objek di dalam *object stream* terkompresi, lalu dipasang
+  homografi bujur/lintang → koordinat halaman. Peta raster dipotong menjadi tile
+  Web Mercator 256 px dengan transformasi afin per tile (maks. ±15.000 tile).
 - Penyimpanan:
   - data objek di `localStorage` (`peta-survei-v1`);
   - foto, layer acuan, dan tile peta offline di IndexedDB (`peta-survei-foto` v2:
