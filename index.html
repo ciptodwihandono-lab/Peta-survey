@@ -432,7 +432,7 @@ function habLabel(k) { return HAB[k] ? HAB[k].l : 'Habitat belum dipilih'; }
 function gpsQ(acc) { return acc == null ? '' : acc <= 5 ? 'good' : acc <= 15 ? 'fair' : 'poor'; }
 
 /* ================= IndexedDB: foto, layer acuan, peta offline ================= */
-const PHOTO_MAX = 2560, PHOTO_Q = 0.88, THUMB_MAX = 320;
+const PHOTO_Q = 0.98, THUMB_MAX = 320, THUMB_Q = 0.85;
 let dbp = null;
 function pdb() {
   if (!dbp) dbp = new Promise((ok, fail) => {
@@ -451,14 +451,30 @@ const pdbPut = (s, k, v) => pdbDo(s, 'readwrite', st => st.put(v, k));
 const pdbDel = (s, k) => pdbDo(s, 'readwrite', st => st.delete(k));
 const pdbAll = s => pdbDo(s, 'readonly', st => st.getAll());
 async function deletePhotos(list) { for (const ph of list || []) { try { await pdbDel('foto', ph.id); await pdbDel('thumb', ph.id); } catch (e) {} } }
-async function shrink(file, max) {
+async function shrink(file, max, q = THUMB_Q) {
   let bmp;
   try { bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
   catch (e) { bmp = await new Promise((ok, fail) => { const im = new Image(); im.onload = () => ok(im); im.onerror = fail; im.src = URL.createObjectURL(file); }); }
   const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
   const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
   c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
-  return { blob: await new Promise(ok => c.toBlob(ok, 'image/jpeg', PHOTO_Q)), w: c.width, h: c.height };
+  const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', q)), w = c.width, h = c.height;
+  if (bmp.close) bmp.close();
+  c.width = c.height = 0;
+  if (!blob) throw new Error('kanvas');
+  return { blob, w, h };
+}
+/* Foto tidak dikompres: file JPEG asli kamera disimpan apa adanya (resolusi dan EXIF utuh).
+   Format lain diubah ke JPEG resolusi penuh kualitas 98% (atau 4096 px bila memori HP tidak cukup). */
+async function fullPhoto(file) {
+  if (/jpe?g/i.test(file.type) || /\.jpe?g$/i.test(file.name || '')) {
+    const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    const out = { blob: file.type === 'image/jpeg' ? file : new Blob([file], { type: 'image/jpeg' }), w: bmp.width, h: bmp.height };
+    if (bmp.close) bmp.close();
+    return out;
+  }
+  try { return await shrink(file, Infinity, PHOTO_Q); }
+  catch (e) { return await shrink(file, 4096, 0.95); }
 }
 
 /* ================= Peta & peta dasar ================= */
@@ -1124,7 +1140,7 @@ async function addPhotos(files) {
   for (const file of files) {
     try {
       const taken = Math.round((file.lastModified || Date.now()) / 1000);
-      const big = await shrink(file, PHOTO_MAX), small = await shrink(file, THUMB_MAX), id = rid();
+      const big = await fullPhoto(file), small = await shrink(file, THUMB_MAX), id = rid();
       await pdbPut('foto', id, big.blob); await pdbPut('thumb', id, small.blob);
       f._photos = f._photos || [];
       const d = new Date(taken * 1000);
