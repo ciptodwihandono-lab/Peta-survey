@@ -77,7 +77,7 @@ Di iPhone: Safari → Bagikan → Tambahkan ke Layar Utama.
   di posisi GPS (atau di tengah peta bila GPS belum siap), lalu formulirnya terbuka.
 - Habitat (15 kelas berwarna), kode otomatis P/G/A###, nama lokasi, kondisi,
   ancaman, vegetasi dominan, deskripsi, catatan.
-- **Foto lokasi** dari kamera atau galeri, diperkecil ke 2560 px, dengan GPS saat memotret.
+- **Foto lokasi** dari kamera atau galeri, disimpan tanpa kompresi (file asli kamera, resolusi penuh), dengan GPS saat memotret.
 - Tab **Objek**: ringkasan (jumlah, hektar, km, foto), tabel per habitat,
   pencarian, filter, dan jarak dari posisi Anda.
 
