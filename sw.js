@@ -33,6 +33,7 @@ async function refresh(key) {
 async function checkAll() {
   const changed = (await Promise.all([...OWN].map((k) => refresh(k).catch(() => false)))).some(Boolean);
   if (changed) (await self.clients.matchAll({ type: 'window' })).forEach((c) => c.postMessage({ type: 'updated' }));
+  return changed;
 }
 let trimming = false;
 async function trimTiles() {
@@ -64,4 +65,5 @@ self.addEventListener('fetch', (e) => {
   })).catch(() => caches.match(INDEX)));
   if (key === INDEX) e.waitUntil(checkAll().catch(() => {}));
 });
-self.addEventListener('message', (e) => { if (e.data && e.data.type === 'check') e.waitUntil(checkAll().catch(() => {})); });
+// Pemeriksaan dari tombol "Periksa pembaruan": balas ke jendela yang meminta, berubah atau tidak.
+self.addEventListener('message', (e) => { if (e.data && e.data.type === 'check') e.waitUntil(checkAll().catch(() => null).then((changed) => { if (e.source) e.source.postMessage({ type: 'checked', changed, ok: changed !== null }); })); });
