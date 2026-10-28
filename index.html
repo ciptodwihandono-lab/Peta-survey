@@ -427,8 +427,12 @@ function stats(f) {
   return { lat: c[0], lon: c[1], len: lineLen(pts, f.type === 'area'), ha: f.type === 'area' ? areaM2(pts) / 10000 : 0, n: pts.length };
 }
 function nextKode(type) { S.seq[type] = (S.seq[type] || 0) + 1; return PREFIX[type] + String(S.seq[type]).padStart(3, '0'); }
-function habColor(k) { return (HAB[k] || { c: '#777' }).c; }
-function habLabel(k) { return HAB[k] ? HAB[k].l : 'Habitat belum dipilih'; }
+/* Habitat bisa lebih dari satu per objek (daftar kode). Data lama berisi satu kode (string) dibaca
+   sebagai daftar satu kode. Warna di peta mengikuti habitat pertama yang dipilih. */
+function asList(v) { return Array.isArray(v) ? v : v == null || v === '' ? [] : [v]; }
+function habColor(v) { return (HAB[asList(v)[0]] || { c: '#777' }).c; }
+function habLabel(v) { const l = asList(v).map(k => HAB[k] ? HAB[k].l : k); return l.length ? l.join(', ') : 'Habitat belum dipilih'; }
+function habKeys(v) { const l = asList(v); return l.length ? l : ['-']; }
 function gpsQ(acc) { return acc == null ? '' : acc <= 5 ? 'good' : acc <= 15 ? 'fair' : 'poor'; }
 
 /* ================= IndexedDB: foto, layer acuan, peta offline ================= */
@@ -546,7 +550,7 @@ function drawAll() { featLayer.clearLayers(); Object.keys(layers).forEach(k => d
 let lastPerm = tooltipPermanent();
 map.on('zoomend', () => { const p = tooltipPermanent(); if (p !== lastPerm) { lastPerm = p; drawAll(); } });
 function renderLegend() {
-  const counts = {}; Object.values(S.features).forEach(f => { const k = f.habitat || '-'; counts[k] = (counts[k] || 0) + 1; });
+  const counts = {}; Object.values(S.features).forEach(f => habKeys(f.habitat).forEach(k => { counts[k] = (counts[k] || 0) + 1; }));
   $('legend').hidden = !Object.keys(counts).length;
   $('legendList').innerHTML = HABITAT.filter(([k]) => counts[k]).map(([k, l, c]) => `<li><span class="sw" style="background:${c}"></span>${esc(l)} (${counts[k]})</li>`).join('') + (counts['-'] ? `<li><span class="sw" style="background:#777"></span>Belum dipilih (${counts['-']})</li>` : '');
 }
@@ -1063,7 +1067,7 @@ function renderSheet() {
       </div></div>
     <div class="fields">
       ${S.layers.length > 1 ? `<div class="field w"><span class="lbl">Lapisan</span>${chipsHTML('layer', S.layers.map(l => [l.id, l.name]), layerOf(f), false)}</div>` : ''}
-      <div class="field w"><span class="lbl">Habitat</span>${chipsHTML('habitat', HABITAT, f.habitat, false, true)}</div>
+      <div class="field w"><span class="lbl">Habitat <span class="hint">(bisa lebih dari satu; warna di peta mengikuti yang dipilih pertama)</span></span>${chipsHTML('habitat', HABITAT, asList(f.habitat), true, true)}</div>
       <div class="field"><label for="f-kode">Kode</label><input type="text" id="f-kode" data-k="kode" value="${esc(f.kode)}"></div>
       <div class="field"><label for="f-nama">Nama lokasi</label><input type="text" id="f-nama" data-k="nama" value="${esc(f.nama || '')}" placeholder="mis. Muara sungai, Blok A"></div>
       <div class="field w"><span class="lbl">Kondisi habitat</span>${chipsHTML('kondisi', KONDISI, f.kondisi, false)}</div>
@@ -1097,7 +1101,7 @@ sheetBody.addEventListener('click', async ev => {
   const chip = ev.target.closest('[data-chip]');
   if (chip) {
     const k = chip.dataset.chip, v = chip.dataset.v;
-    if (chip.dataset.multi === '1') { const a = f[k] || []; f[k] = a.includes(v) ? a.filter(x => x !== v) : [...a, v]; chip.setAttribute('aria-pressed', f[k].includes(v)); }
+    if (chip.dataset.multi === '1') { const a = asList(f[k]); f[k] = a.includes(v) ? a.filter(x => x !== v) : [...a, v]; chip.setAttribute('aria-pressed', f[k].includes(v)); }
     else if (k === 'layer') { f.layer = v; chip.parentElement.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.v === v)); drawFeature(f); if (!layerVisible(f)) toast('Lapisan ini sedang disembunyikan di peta'); }
     else { f[k] = f[k] === v ? '' : v; chip.parentElement.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', c.dataset.v === f[k])); }
     f.updated = Date.now(); save();
@@ -1262,11 +1266,14 @@ let listFilter = '', listQuery = '', listLayer = '';
 function renderList() {
   const all = Object.values(S.features).sort((a, b) => b.t - a.t);
   const sum = {}; let totHa = 0, totLen = 0;
-  all.forEach(f => { const k = f.habitat || '-'; const s = sum[k] = sum[k] || { n: 0, ha: 0, len: 0 }; const st = stats(f); s.n++; if (f.type === 'area') { s.ha += st.ha; totHa += st.ha; } if (f.type === 'line') { s.len += st.len; totLen += st.len; } });
+  all.forEach(f => {
+    const st = stats(f); if (f.type === 'area') totHa += st.ha; if (f.type === 'line') totLen += st.len;
+    habKeys(f.habitat).forEach(k => { const s = sum[k] = sum[k] || { n: 0, ha: 0, len: 0 }; s.n++; if (f.type === 'area') s.ha += st.ha; if (f.type === 'line') s.len += st.len; });
+  });
   const rows = Object.entries(sum).sort((a, b) => b[1].n - a[1].n);
   const nPh = all.reduce((a, f) => a + (f._photos || []).length, 0);
   const q = listQuery.toLowerCase();
-  const list = all.filter(f => (!listFilter || (f.habitat || '-') === listFilter) && (!listLayer || layerOf(f) === listLayer) && (!q || [f.kode, f.nama, f.vegetasi, f.deskripsi, f.catatan, habLabel(f.habitat), layerName(layerOf(f))].join(' ').toLowerCase().includes(q)));
+  const list = all.filter(f => (!listFilter || habKeys(f.habitat).includes(listFilter)) && (!listLayer || layerOf(f) === listLayer) && (!q || [f.kode, f.nama, f.vegetasi, f.deskripsi, f.catatan, habLabel(f.habitat), layerName(layerOf(f))].join(' ').toLowerCase().includes(q)));
   $('listPage').innerHTML = `
     <section class="stats" aria-label="Ringkasan">
       <div class="stat"><div class="v">${all.length}</div><div class="k">Objek</div></div>
@@ -1274,7 +1281,7 @@ function renderList() {
       <div class="stat"><div class="v">${(totLen / 1000).toFixed(2).replace('.', ',')}</div><div class="k">Km garis</div></div>
       <div class="stat"><div class="v">${nPh}</div><div class="k">Foto</div></div>
     </section>
-    ${rows.length ? `<section class="section"><h2>Per habitat</h2><div class="box" style="overflow-x:auto"><table class="sumtab"><thead><tr><th>Habitat</th><th>Objek</th><th>Luas</th><th>Panjang</th></tr></thead><tbody>
+    ${rows.length ? `<section class="section"><h2>Per habitat</h2>${all.some(f => asList(f.habitat).length > 1) ? '<p class="note">Objek dengan beberapa habitat dihitung di setiap habitatnya, jadi jumlah per baris bisa lebih besar dari total.</p>' : ''}<div class="box" style="overflow-x:auto"><table class="sumtab"><thead><tr><th>Habitat</th><th>Objek</th><th>Luas</th><th>Panjang</th></tr></thead><tbody>
       ${rows.map(([k, s]) => `<tr><td><span class="sw" style="background:${k === '-' ? '#777' : habColor(k)}"></span>${esc(k === '-' ? 'Belum dipilih' : habLabel(k))}</td><td>${s.n}</td><td>${s.ha ? fmtHa(s.ha) : '–'}</td><td>${s.len ? fmtLen(s.len) : '–'}</td></tr>`).join('')}
     </tbody></table></div></section>` : ''}
     <section class="section"><h2>Daftar objek</h2>
@@ -1406,7 +1413,7 @@ function backupJSON() { return JSON.stringify({ app: 'peta-survei', exported: ne
 function props(f) {
   const st = stats(f), u = toUTM(st.lat, st.lon);
   return {
-    kode: f.kode, tipe: TIPE[f.type], lapisan: layerName(layerOf(f)), nama: f.nama || '', habitat_kode: f.habitat || '', habitat: f.habitat ? habLabel(f.habitat) : '',
+    kode: f.kode, tipe: TIPE[f.type], lapisan: layerName(layerOf(f)), nama: f.nama || '', habitat_kode: asList(f.habitat).join('; '), habitat: asList(f.habitat).length ? asList(f.habitat).map(k => HAB[k] ? HAB[k].l : k).join('; ') : '',
     kondisi: (KONDISI.find(k => k[0] === f.kondisi) || ['', ''])[1], ancaman: (f.ancaman || []).map(a => (ANCAMAN.find(x => x[0] === a) || [a, a])[1]).join('; '),
     vegetasi: f.vegetasi || '', deskripsi: f.deskripsi || '', catatan: f.catatan || '', waktu: new Date(f.t * 1000).toISOString(),
     sumber: f.src === 'gps' ? (f.gps && f.gps.metode === 'rata-rata' ? `GPS HP rata-rata ${f.gps.n} bacaan` : 'GPS HP') : f.src === 'file' ? 'file' : 'digitasi peta',
@@ -1442,7 +1449,7 @@ function toGPX() {
 function kmlColor(hex, a) { const h = hex.replace('#', ''); return a + h.slice(4, 6) + h.slice(2, 4) + h.slice(0, 2); }
 function toKML(withImgs) {
   const styles = [...HABITAT, ['XX', 'Belum dipilih', '#777777']].map(([k, , c]) => `<Style id="h${k}"><IconStyle><color>${kmlColor(c, 'ff')}</color><scale>1.1</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/wht-blank.png</href></Icon></IconStyle><LineStyle><color>${kmlColor(c, 'ff')}</color><width>3</width></LineStyle><PolyStyle><color>${kmlColor(c, '55')}</color></PolyStyle></Style>`).join('\n');
-  const habFolders = fs => { const groups = {}; fs.forEach(f => { const k = f.habitat || 'XX'; (groups[k] = groups[k] || []).push(f); }); return Object.entries(groups).map(([k, list]) => `<Folder><name>${esc(k === 'XX' ? 'Belum dipilih' : habLabel(k))} (${list.length})</name>\n${list.map(pm).join('\n')}\n</Folder>`).join('\n'); };
+  const habFolders = fs => { const groups = {}; fs.forEach(f => { const k = asList(f.habitat)[0] || 'XX'; (groups[k] = groups[k] || []).push(f); }); return Object.entries(groups).map(([k, list]) => `<Folder><name>${esc(k === 'XX' ? 'Belum dipilih' : habLabel(k))} (${list.length})</name>\n${list.map(pm).join('\n')}\n</Folder>`).join('\n'); };
   const pm = f => {
     const p = props(f);
     const rows = [['Tipe', p.tipe], ['Lapisan', S.layers.length > 1 ? p.lapisan : ''], ['Habitat', p.habitat], ['Nama', p.nama], ['Kondisi', p.kondisi], ['Ancaman', p.ancaman], ['Vegetasi', p.vegetasi], ['Deskripsi', p.deskripsi], ['Catatan', p.catatan], ['Waktu', fmtTime(f.t)], ['UTM', `${p.utm_zona} ${Math.round(p.utm_x)} mT ${Math.round(p.utm_y)} mU`], ['Ketelitian', p.akurasi_m != null ? `±${p.akurasi_m} m` : ''], ['Panjang', p.panjang_m != null ? fmtLen(p.panjang_m) : ''], ['Luas', p.luas_ha != null ? fmtHa(p.luas_ha) : ''], ['Surveyor', p.surveyor]].filter(r => r[1]);
@@ -1450,7 +1457,7 @@ function toKML(withImgs) {
     const c = f.type === 'point' ? `<Point><coordinates>${f.coords[1]},${f.coords[0]},0</coordinates></Point>`
       : f.type === 'line' ? `<LineString><tessellate>1</tessellate><coordinates>${f.coords.map(q => `${q[1]},${q[0]},0`).join(' ')}</coordinates></LineString>`
       : `<Polygon><outerBoundaryIs><LinearRing><coordinates>${[...f.coords, f.coords[0]].map(q => `${q[1]},${q[0]},0`).join(' ')}</coordinates></LinearRing></outerBoundaryIs></Polygon>`;
-    return `<Placemark><name>${esc(f.kode)}${f.nama ? ' ' + esc(f.nama) : ''}</name><styleUrl>#h${f.habitat || 'XX'}</styleUrl><description><![CDATA[${desc}]]></description>${c}</Placemark>`;
+    return `<Placemark><name>${esc(f.kode)}${f.nama ? ' ' + esc(f.nama) : ''}</name><styleUrl>#h${HAB[asList(f.habitat)[0]] ? asList(f.habitat)[0] : 'XX'}</styleUrl><description><![CDATA[${desc}]]></description>${c}</Placemark>`;
   };
   const used = S.layers.filter(l => sorted().some(f => layerOf(f) === l.id));
   const folders = used.length > 1 ? used.map(l => `<Folder><name>${esc(l.name)}</name>\n${habFolders(sorted().filter(f => layerOf(f) === l.id))}\n</Folder>`).join('\n') : habFolders(sorted());
