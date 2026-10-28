@@ -326,6 +326,9 @@ details.guide ol { padding-left: 20px; margin: 8px 0; display: flex; flex-direct
 <script src="vendor/leaflet.js"></script>
 <script>
 'use strict';
+// Diisi tanggal dan kode versi oleh workflow GitHub Pages saat diterbitkan.
+const APP_BUILD = '__BUILD__';
+function buildLabel() { return APP_BUILD.startsWith('__') ? 'versi pengembangan' : APP_BUILD; }
 
 /* ================= Atribut ================= */
 const HABITAT = [
@@ -1372,6 +1375,10 @@ async function renderData() {
       <p class="note">Pilih cadangan .json dari HP anggota lain. Objek yang sama tidak terduplikasi; versi terbaru yang dipakai.</p>
       <button type="button" class="btn ghost block" data-d="import">Pilih file cadangan</button>
     </section>
+    <section class="section"><h2>Versi aplikasi</h2>
+      <p class="note">Versi terpasang: <b>${esc(buildLabel())}</b>. Aplikasi memeriksa versi baru sendiri setiap dibuka saat ada sinyal; tombol ini untuk memeriksa sekarang juga.</p>
+      <button type="button" class="btn ghost block" data-d="upd">Periksa pembaruan sekarang</button>
+    </section>
     <section class="section"><h2>Penyimpanan</h2><p class="note" id="storeInfo"></p>
       <button type="button" class="btn danger block" data-d="wipe">Hapus semua objek dan foto</button>
     </section>
@@ -1389,6 +1396,7 @@ dataPage.addEventListener('click', async ev => {
   const fm = ev.target.closest('[data-fmt]'); if (fm) { coordFmt = fm.dataset.fmt; setPref('fmt', coordFmt); updateHud(); renderData(); return; }
   const b = ev.target.closest('[data-d]'); if (!b) return; const a = b.dataset.d;
   if (a === 'install') doInstall();
+  else if (a === 'upd') manualUpdate(b);
   else if (a === 'zip' || a === 'zip-share') exportZip(a === 'zip-share');
   else if (a === 'shp') exportSHP();
   else if (a === 'kmz') exportKMZ();
@@ -2122,6 +2130,24 @@ function updateNet() { $('netDot').classList.toggle('on', navigator.onLine); $('
 window.addEventListener('online', updateNet); window.addEventListener('offline', updateNet);
 let updateReady = false;
 function safeToReload() { const a = document.activeElement; return !REC && !DRAW && !EDIT && !SHEET && !NAV && $('progress').hidden && !(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)); }
+/* Tombol "Periksa pembaruan sekarang": minta service worker membandingkan file dengan server,
+   lalu muat versi baru bila ada. APP_BUILD (di awal skrip) diisi saat diterbitkan. */
+async function manualUpdate(btn) {
+  if (!navigator.onLine) { toast('Tidak ada sinyal. Periksa pembaruan saat online.'); return; }
+  const sw = navigator.serviceWorker && navigator.serviceWorker.controller;
+  if (!sw) { save(); location.reload(); return; }
+  btn.disabled = true; btn.textContent = 'Memeriksa…';
+  const res = await new Promise(ok => {
+    const t = setTimeout(() => { navigator.serviceWorker.removeEventListener('message', h); ok(null); }, 25000);
+    const h = ev => { if (ev.data && ev.data.type === 'checked') { clearTimeout(t); navigator.serviceWorker.removeEventListener('message', h); ok(ev.data); } };
+    navigator.serviceWorker.addEventListener('message', h);
+    sw.postMessage({ type: 'check' });
+  });
+  navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {});
+  if (res && res.changed) { applyUpdate(); return; }
+  btn.disabled = false; btn.textContent = 'Periksa pembaruan sekarang';
+  toast(res && res.ok ? 'Sudah versi terbaru.' : 'Server belum menjawab. Coba lagi sebentar lagi.');
+}
 function applyUpdate() { save(); try { sessionStorage.setItem('peta-survei-tab', currentTab); sessionStorage.setItem('peta-survei-updated', '1'); } catch (e) {} location.reload(); }
 function onUpdateReady() { updateReady = true; if (safeToReload()) applyUpdate(); else $('updbar').hidden = false; }
 function checkUpdate() { if (!navigator.onLine || !navigator.serviceWorker || !navigator.serviceWorker.controller) return; navigator.serviceWorker.controller.postMessage({ type: 'check' }); navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {}); }
