@@ -315,7 +315,7 @@ details.guide ol { padding-left: 20px; margin: 8px 0; display: flex; flex-direct
 <div class="modal" id="progress" hidden><div class="box"><b id="progT">Mengimpor…</b><div class="meter"><i id="progBar"></i></div><span class="hint" id="progS"></span></div></div>
 <div class="viewer" id="viewer" hidden>
   <img id="viewerImg" alt="">
-  <div class="vbar"><span class="grow" id="viewerCap"></span><button type="button" id="viewerDel">Hapus foto</button><button type="button" id="viewerClose">Tutup</button></div>
+  <div class="vbar"><span class="grow" id="viewerCap"></span><button type="button" id="viewerAI" hidden>Baca dengan AI</button><button type="button" id="viewerDel">Hapus foto</button><button type="button" id="viewerClose">Tutup</button></div>
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 <input type="file" id="camIn" accept="image/*" capture="environment" hidden>
@@ -1166,9 +1166,10 @@ async function addPhotos(files) {
       if (geo) Object.assign(meta, { lat: +geo.lat.toFixed(7), lon: +geo.lon.toFixed(7), acc: geo.acc });
       else if (f.type === 'point') Object.assign(meta, { lat: f.coords[0], lon: f.coords[1], acc: f.coords[2] || null });
       f._photos.push(meta); n++;
+      if (aiOn()) { const q = aiQueue().filter(j => j.ph !== id); q.push({ ph: id, fid: f.id }); aiSetQueue(q); }
     } catch (e) { toast('Foto gagal disimpan. Memori HP mungkin penuh.'); }
   }
-  if (n) { f.updated = Date.now(); save(); if (SHEET === f.id) renderSheet(); toast(`${n} foto tersimpan`); }
+  if (n) { f.updated = Date.now(); save(); if (SHEET === f.id) renderSheet(); toast(aiOn() ? `${n} foto tersimpan · ${navigator.onLine ? 'AI sedang membaca foto…' : 'dibaca AI saat ada sinyal'}` : `${n} foto tersimpan`); aiRun(); }
 }
 async function loadThumbs() {
   thumbURLs.forEach(u => URL.revokeObjectURL(u)); thumbURLs = [];
@@ -1183,12 +1184,18 @@ async function openViewer(id) {
   if (!b) { toast('File foto ini tidak ada di HP ini.'); return; }
   viewerPhoto = ph; if (viewerURL) URL.revokeObjectURL(viewerURL); viewerURL = URL.createObjectURL(b);
   $('viewerImg').src = viewerURL;
-  $('viewerCap').textContent = `${ph.name} · ${fmtTime(ph.t)}${ph.lat != null ? ` · ${fmtCoord(ph.lat, ph.lon)}${ph.acc ? ` (±${ph.acc} m)` : ''}` : ''}`;
+  $('viewerCap').textContent = `${ph.name} · ${fmtTime(ph.t)}${ph.lat != null ? ` · ${fmtCoord(ph.lat, ph.lon)}${ph.acc ? ` (±${ph.acc} m)` : ''}` : ''}${ph.ai ? ` · AI: ${ph.ai.deskripsi}${ph.ai.catatan ? ' ' + ph.ai.catatan : ''}` : ''}`;
+  $('viewerAI').hidden = !aiKey();
   const del = $('viewerDel'); del.classList.remove('armed'); del.textContent = 'Hapus foto';
   $('viewer').hidden = false;
 }
 function closeViewer() { $('viewer').hidden = true; viewerPhoto = null; if (viewerURL) { URL.revokeObjectURL(viewerURL); viewerURL = null; } }
 $('viewerClose').addEventListener('click', closeViewer);
+$('viewerAI').addEventListener('click', () => {
+  const f = S.features[SHEET]; if (!f || !viewerPhoto) return;
+  aiEnqueue({ ph: viewerPhoto.id, fid: f.id });
+  toast(navigator.onLine ? 'AI sedang membaca foto ini…' : 'Foto masuk antrean; dibaca AI saat ada sinyal.');
+});
 $('viewerDel').addEventListener('click', async ev => {
   const b = ev.currentTarget;
   if (!b.classList.contains('armed')) { b.classList.add('armed'); b.textContent = 'Ketuk lagi untuk menghapus'; return; }
@@ -1384,6 +1391,7 @@ async function renderData() {
       <p class="note">Pilih cadangan .json dari HP anggota lain. Objek yang sama tidak terduplikasi; versi terbaru yang dipakai.</p>
       <button type="button" class="btn ghost block" data-d="import">Pilih file cadangan</button>
     </section>
+    ${aiSectionHTML('data-d')}
     <section class="section"><h2>Versi aplikasi</h2>
       <p class="note">Versi terpasang: <b>${esc(buildLabel())}</b>. Aplikasi memeriksa versi baru sendiri setiap dibuka saat ada sinyal; tombol ini untuk memeriksa sekarang juga.</p>
       <button type="button" class="btn ghost block" data-d="upd">Periksa pembaruan sekarang</button>
@@ -1391,7 +1399,7 @@ async function renderData() {
     <section class="section"><h2>Penyimpanan</h2><p class="note" id="storeInfo"></p>
       <button type="button" class="btn danger block" data-d="wipe">Hapus semua objek dan foto</button>
     </section>
-    <p class="note">Peta dasar online: Esri World Imagery dan © OpenStreetMap contributors. Pustaka: Leaflet, sql.js, PDF.js, geotiff.js, proj4js.</p>`;
+    <p class="note">Peta dasar online: Esri World Imagery dan © OpenStreetMap contributors. Pustaka: Leaflet, sql.js, PDF.js, geotiff.js, proj4js, Anthropic SDK.</p>`;
   if ('caches' in window) caches.open('peta-tiles').then(c => c.keys()).then(k => { const el = $('tileInfo'); if (el) el.textContent = `${k.length.toLocaleString('id-ID')} potongan peta online tersimpan dari tampilan sebelumnya.`; }).catch(() => {});
   if (navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then(e => { const el = $('storeInfo'); if (el && e.quota) el.textContent = `Terpakai ${fmtMB(e.usage)} dari ±${(e.quota / 1073741824).toFixed(1).replace('.', ',')} GB yang tersedia untuk aplikasi.`; }).catch(() => {});
 }
@@ -1400,12 +1408,16 @@ dataPage.addEventListener('input', ev => {
   if (ev.target.id === 'p-nama') { S.profile.nama = ev.target.value; saveSoon(); }
   if (ev.target.id === 'p-proyek') { S.profile.proyek = ev.target.value; $('projName').textContent = S.profile.proyek || 'Pemetaan lapangan'; saveSoon(); }
 });
-dataPage.addEventListener('change', ev => { if (ev.target.id === 'withPhotos') setPref('zipfoto', ev.target.checked); });
+dataPage.addEventListener('change', ev => {
+  if (ev.target.id === 'withPhotos') setPref('zipfoto', ev.target.checked);
+  if (ev.target.id === 'aiAuto') { try { localStorage.setItem(AI_APP + '-ai-auto', ev.target.checked ? '1' : '0'); } catch (e) {} }
+});
 dataPage.addEventListener('click', async ev => {
   const fm = ev.target.closest('[data-fmt]'); if (fm) { coordFmt = fm.dataset.fmt; setPref('fmt', coordFmt); updateHud(); renderData(); return; }
   const b = ev.target.closest('[data-d]'); if (!b) return; const a = b.dataset.d;
   if (a === 'install') doInstall();
   else if (a === 'upd') manualUpdate(b);
+  else if (a.startsWith('ai')) aiAction(a, b);
   else if (a === 'zip' || a === 'zip-share') exportZip(a === 'zip-share');
   else if (a === 'shp') exportSHP();
   else if (a === 'kmz') exportKMZ();
@@ -1453,8 +1465,8 @@ function toCSV(rows) { return '﻿' + rows.map(r => r.map(csvCell).join(',')).jo
 const CSV_KEYS = ['kode', 'tipe', 'lapisan', 'nama', 'habitat_kode', 'habitat', 'kondisi', 'ancaman', 'vegetasi', 'deskripsi', 'catatan', 'waktu', 'sumber', 'akurasi_m', 'sebaran_m', 'panjang_m', 'luas_ha', 'lat', 'lon', 'utm_zona', 'utm_x', 'utm_y', 'jumlah_foto', 'foto', 'proyek', 'surveyor'];
 function objekCSV() { return toCSV([CSV_KEYS, ...sorted().map(f => { const p = props(f); return CSV_KEYS.map(k => p[k] ?? ''); })]); }
 function fotoCSV() {
-  const rows = [['file', 'kode_objek', 'habitat', 'waktu', 'lat', 'lon', 'akurasi_m', 'utm_zona', 'utm_x', 'utm_y', 'lebar_px', 'tinggi_px']];
-  sorted().forEach(f => (f._photos || []).forEach(p => { const u = p.lat != null ? toUTM(p.lat, p.lon) : null; rows.push(['foto/' + p.name, f.kode, habLabel(f.habitat), new Date(p.t * 1000).toISOString(), p.lat ?? '', p.lon ?? '', p.acc ?? '', u ? `${u.zone}${u.hemi}` : '', u ? Math.round(u.e) : '', u ? Math.round(u.n) : '', p.w, p.h]); }));
+  const rows = [['file', 'kode_objek', 'habitat', 'waktu', 'lat', 'lon', 'akurasi_m', 'utm_zona', 'utm_x', 'utm_y', 'lebar_px', 'tinggi_px', 'deskripsi_ai', 'catatan_ai']];
+  sorted().forEach(f => (f._photos || []).forEach(p => { const u = p.lat != null ? toUTM(p.lat, p.lon) : null; rows.push(['foto/' + p.name, f.kode, habLabel(f.habitat), new Date(p.t * 1000).toISOString(), p.lat ?? '', p.lon ?? '', p.acc ?? '', u ? `${u.zone}${u.hemi}` : '', u ? Math.round(u.e) : '', u ? Math.round(u.n) : '', p.w, p.h, p.ai ? p.ai.deskripsi : '', p.ai ? p.ai.catatan : '']); }));
   return toCSV(rows);
 }
 function toGPX() {
@@ -2140,6 +2152,203 @@ async function deleteMap(id, silent) {
   if (!silent && base.kind === 'off:' + id) setBase('sat');
 }
 
+/* ================= Baca foto dengan AI (Claude) =================
+   Foto baru diantrekan; saat ada sinyal, foto diperkecil ke 1280 px lalu dikirim ke Claude (Anthropic)
+   untuk mengisi Deskripsi dan Catatan. Isian yang sudah diketik tidak ditimpa: teks AI ditambahkan di
+   baris baru. Kunci API hanya disimpan di HP ini (localStorage, dipakai bersama Survei Cemara dan
+   Peta Survei karena satu domain) dan tidak ikut file cadangan. */
+const AI_MODEL = 'claude-opus-5-5';
+const AI_KEY = 'claude-foto-apikey';
+const AI_SCHEMA = {
+  type: 'object',
+  properties: {
+    deskripsi: { type: 'string', description: 'Deskripsi lokasi/habitat yang terlihat di foto' },
+    catatan: { type: 'string', description: 'Temuan menonjol; string kosong bila tidak ada' },
+  },
+  required: ['deskripsi', 'catatan'],
+  additionalProperties: false,
+};
+const AI_SYSTEM = `Anda membantu surveyor keanekaragaman hayati di pesisir dan mangrove Indonesia mengisi formulir lapangan dari foto.
+Tulis dalam bahasa Indonesia yang ringkas dan faktual, hanya berdasarkan yang terlihat di foto.
+- deskripsi (1–3 kalimat): tipe habitat, substrat, vegetasi dominan, air/genangan, dan kondisi umum lokasi.
+- catatan (0–2 kalimat): temuan yang menonjol, misalnya satwa yang terlihat beserta perkiraan jumlahnya, tanda gangguan atau ancaman (sampah, abrasi, penebangan, jaring, bekas bakar), atau hal yang perlu dicek ulang. Kosongkan bila tidak ada.
+Sebut nama jenis atau genus hanya bila cirinya jelas terlihat; bila ragu, tulis kelompoknya saja (mis. "burung pantai kecil"). Abaikan teks watermark (koordinat, tanggal) pada foto.`;
+function aiKey() { try { return localStorage.getItem(AI_KEY) || ''; } catch (e) { return ''; } }
+function aiAuto() { try { return localStorage.getItem(AI_APP + '-ai-auto') !== '0'; } catch (e) { return true; } }
+function aiOn() { return !!aiKey() && aiAuto(); }
+function aiQueue() { try { return JSON.parse(localStorage.getItem(AI_APP + '-ai-queue') || '[]'); } catch (e) { return []; } }
+function aiSetQueue(q) { try { localStorage.setItem(AI_APP + '-ai-queue', JSON.stringify(q)); } catch (e) {} }
+let aiSdkP = null;
+function aiSdk() {
+  if (!aiSdkP) {
+    aiSdkP = new Promise((ok, fail) => {
+      if (window.AnthropicSDK) { ok(); return; }
+      const s = document.createElement('script'); s.src = 'vendor/anthropic-sdk.js'; s.onload = ok; s.onerror = () => fail(new Error('pustaka'));
+      document.head.appendChild(s);
+    }).then(() => window.AnthropicSDK.default);
+    aiSdkP.catch(() => { aiSdkP = null; });
+  }
+  return aiSdkP;
+}
+async function aiClient() {
+  const Anthropic = await aiSdk();
+  // Kunci API milik pengguna sendiri, dipakai langsung dari HP-nya (tanpa server perantara).
+  return new Anthropic({ apiKey: aiKey(), dangerouslyAllowBrowser: true, timeout: 120000, maxRetries: 2 });
+}
+/* Foto dikirim diperkecil (sisi terpanjang 1280 px): cukup untuk dibaca, hemat biaya dan pulsa. */
+async function aiImageB64(blob) {
+  const bmp = await createImageBitmap(blob);
+  const k = Math.min(1, 1280 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height); if (bmp.close) bmp.close();
+  const small = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.85));
+  const url = await new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(small); });
+  return String(url).split(',')[1];
+}
+async function aiDescribe(blob, context) {
+  const client = await aiClient();
+  const data = await aiImageB64(blob);
+  const res = await client.beta.messages.create({
+    model: AI_MODEL,
+    max_tokens: 4000,
+    betas: ['server-side-fallback-2026-07-01'],
+    fallbacks: 'default',   // bila model menolak, Anthropic mencoba ulang di model cadangan
+    output_config: { effort: 'low', format: { type: 'json_schema', schema: AI_SCHEMA } },
+    system: AI_SYSTEM,
+    messages: [{ role: 'user', content: [
+      { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data } },
+      { type: 'text', text: context },
+    ] }],
+  });
+  if (res.stop_reason === 'refusal') throw new Error('refusal');
+  if (res.stop_reason === 'max_tokens') throw new Error('terpotong');
+  const o = JSON.parse(res.content.filter(b => b.type === 'text').map(b => b.text).join(''));
+  return { deskripsi: String(o.deskripsi || '').trim(), catatan: String(o.catatan || '').trim(), model: res.model };
+}
+/* [tindakan, pesan]: 'stop' = berhenti dan simpan antrean (mis. kunci salah), 'retry' = coba lagi nanti, 'drop' = lewati foto. */
+function aiErrKind(e) {
+  const A = window.AnthropicSDK && window.AnthropicSDK.default;
+  if (e && e.message === 'refusal') return ['drop', 'AI tidak mau membaca foto ini.'];
+  if (e && e.message === 'pustaka') return ['retry', 'Pustaka AI belum tersimpan di HP. Buka aplikasi sekali saat ada sinyal.'];
+  if (A) {
+    if (e instanceof A.AuthenticationError) return ['stop', 'Kunci API Claude ditolak. Periksa kunci di tab Data.'];
+    if (e instanceof A.PermissionDeniedError) return ['stop', 'Kunci API tidak punya izin memakai model ini. Periksa di console.anthropic.com.'];
+    if (e instanceof A.RateLimitError) return ['retry', 'Batas pemakaian AI tercapai; foto dicoba lagi nanti.'];
+    if (e instanceof A.BadRequestError) return ['retry', 'Permintaan AI ditolak: ' + (e.message || '') + ' (mis. saldo API habis).'];
+    if (e instanceof A.InternalServerError) return ['retry', 'Server AI sedang sibuk; foto dicoba lagi nanti.'];
+    if (e instanceof A.APIConnectionError) return ['retry', 'Sinyal tidak cukup untuk mengirim foto ke AI; dicoba lagi nanti.'];
+    if (e instanceof A.APIError) return ['retry', 'AI gagal (' + (e.status || '?') + '); dicoba lagi nanti.'];
+  }
+  return ['drop', 'Hasil AI untuk foto ini tidak terbaca.'];
+}
+function aiAddText(obj, k, t) {
+  if (!t) return;
+  const cur = String(obj[k] || '').trim();
+  if (cur.includes(t)) return;
+  obj[k] = cur ? cur + '\nAI: ' + t : t;
+}
+function aiEnqueue(job) {
+  const q = aiQueue().filter(j => j.ph !== job.ph); q.push(job); aiSetQueue(q);
+  aiRun();
+}
+let aiBusy = false;
+async function aiRun() {
+  if (aiBusy || !aiKey() || !navigator.onLine || !aiQueue().length) return;
+  aiBusy = true;
+  let done = 0;
+  try {
+    for (;;) {
+      const q = aiQueue(); if (!q.length || !navigator.onLine || !aiKey()) break;
+      const job = q[0], loc = aiLocate(job);
+      const drop = () => aiSetQueue(aiQueue().filter(j => j.ph !== job.ph));
+      const blob = loc && await pdbGet('foto', job.ph).catch(() => null);
+      if (!loc || !blob) { drop(); continue; }
+      try {
+        const r = await aiDescribe(blob, loc.context);
+        const cur = aiLocate(job);
+        if (cur) {
+          cur.ph.ai = { deskripsi: r.deskripsi, catatan: r.catatan, model: r.model, t: Date.now() };
+          if (cur.fields.includes('deskripsi')) { aiAddText(cur.obj, 'deskripsi', r.deskripsi); if (cur.fields.includes('catatan')) aiAddText(cur.obj, 'catatan', r.catatan); }
+          else if (cur.fields.includes('catatan')) aiAddText(cur.obj, 'catatan', [r.deskripsi, r.catatan].filter(Boolean).join(' '));
+          cur.done();
+        }
+        drop(); done++;
+      } catch (e) {
+        const [kind, msg] = aiErrKind(e);
+        if (kind === 'drop') { drop(); toast(msg); continue; }
+        if (kind === 'retry') {
+          job.tries = (job.tries || 0) + 1;
+          aiSetQueue(job.tries >= 4 ? aiQueue().filter(j => j.ph !== job.ph) : aiQueue().map(j => j.ph === job.ph ? job : j));
+        }
+        toast(msg); break;
+      }
+    }
+  } finally {
+    aiBusy = false;
+    if (done) toast(done > 1 ? `AI mengisi deskripsi dan catatan dari ${done} foto.` : 'AI mengisi deskripsi dan catatan dari foto.');
+    aiRefreshSection();
+  }
+}
+function aiSectionHTML(attr) {
+  const k = aiKey(), n = aiQueue().length;
+  return `<section class="section" id="aiSec"><h2>Baca foto dengan AI (Claude)</h2>
+      <p class="note">Foto baru dibaca Claude AI untuk mengisi <b>Deskripsi</b> dan <b>Catatan</b> secara otomatis. Butuh sinyal; tanpa sinyal foto diantrekan dan dibaca begitu ada sinyal. Foto dikirim (diperkecil) ke Anthropic. Biaya kira-kira Rp250–400 per foto, ditagih ke akun API Anthropic Anda.</p>
+      ${k ? `<p class="note">Kunci tersimpan: <b>${esc(k.slice(0, 7))}…${esc(k.slice(-4))}</b> (juga dipakai aplikasi pasangannya di HP ini).</p>` : ''}
+      <div class="fields"><div class="field w"><label for="aiKeyIn">${k ? 'Ganti kunci API Anthropic' : 'Kunci API Anthropic'}</label><input type="password" id="aiKeyIn" placeholder="sk-ant-…" autocomplete="off" spellcheck="false"></div></div>
+      <div class="row"><button type="button" class="btn ghost" ${attr}="aikey">Simpan kunci</button>${k ? `<button type="button" class="btn ghost" ${attr}="aitest">Uji kunci</button><button type="button" class="btn danger" ${attr}="aidel">Hapus kunci</button>` : ''}</div>
+      <label class="check"><input type="checkbox" id="aiAuto" ${aiAuto() ? 'checked' : ''}>Baca otomatis setiap foto baru</label>
+      <p class="note" id="aiQueueInfo">${n ? `${n} foto menunggu dibaca AI.` : 'Tidak ada foto yang menunggu.'}</p>
+      ${n && k ? `<button type="button" class="btn ghost block" ${attr}="airun">Baca foto yang menunggu sekarang</button>` : ''}
+      <details class="guide legend"><summary>Cara mendapatkan kunci API</summary><ol style="padding-left:20px;margin:8px 0">
+        <li>Buka <b>console.anthropic.com</b> di browser (lebih mudah dari laptop), lalu daftar atau masuk.</li>
+        <li>Isi saldo di menu <b>Billing</b>, dan atur batas belanja bulanan di <b>Limits</b> agar biaya terkendali.</li>
+        <li>Menu <b>API Keys</b> → <b>Create Key</b>, beri nama mis. "Survei HP", lalu salin kuncinya (diawali <code>sk-ant-</code>).</li>
+        <li>Tempel di kolom di atas, tekan <b>Simpan kunci</b>, lalu <b>Uji kunci</b>.</li>
+        <li>Jangan bagikan kunci ini. Bila HP hilang, hapus kunci itu di console.anthropic.com.</li>
+      </ol></details>
+    </section>`;
+}
+function aiRefreshSection() { const el = document.getElementById('aiQueueInfo'); if (el) { const n = aiQueue().length; el.textContent = n ? `${n} foto menunggu dibaca AI.` : 'Tidak ada foto yang menunggu.'; } }
+async function aiAction(a, btn) {
+  if (a === 'aikey') {
+    const v = (document.getElementById('aiKeyIn').value || '').trim();
+    if (!/^sk-ant-/.test(v)) { toast('Kunci API Anthropic diawali "sk-ant-". Salin ulang dari console.anthropic.com.'); return; }
+    try { localStorage.setItem(AI_KEY, v); } catch (e) {}
+    toast('Kunci disimpan di HP ini. Tekan "Uji kunci" untuk memeriksa.'); aiRedraw(); aiRun();
+  } else if (a === 'aidel') {
+    if (!btn.classList.contains('armed')) { btn.classList.add('armed'); btn.textContent = 'Ketuk lagi untuk menghapus'; return; }
+    try { localStorage.removeItem(AI_KEY); } catch (e) {}
+    toast('Kunci API dihapus dari HP ini.'); aiRedraw();
+  } else if (a === 'aitest') {
+    if (!navigator.onLine) { toast('Uji kunci butuh sinyal.'); return; }
+    btn.disabled = true; btn.textContent = 'Menguji…';
+    try { const client = await aiClient(); await client.models.retrieve(AI_MODEL); toast('Kunci berfungsi. Foto baru akan dibaca AI.'); }
+    catch (e) { toast(aiErrKind(e)[1]); }
+    btn.disabled = false; btn.textContent = 'Uji kunci';
+  } else if (a === 'airun') {
+    if (!navigator.onLine) { toast('Tidak ada sinyal. Foto dibaca otomatis saat ada sinyal.'); return; }
+    toast('AI membaca foto yang menunggu…'); aiRun();
+  }
+}
+window.addEventListener('online', () => aiRun());
+document.addEventListener('visibilitychange', () => { if (!document.hidden) aiRun(); });
+const AI_APP = 'peta-survei';
+/* Lokasi foto dalam data: objek pemilik foto, kolom yang diisi, dan konteks untuk AI. */
+function aiLocate(job) {
+  const f = S.features[job.fid], ph = f && (f._photos || []).find(p => p.id === job.ph);
+  if (!ph) return null;
+  return {
+    obj: f, ph, fields: ['deskripsi', 'catatan'],
+    context: `Foto objek ${TIPE[f.type].toLowerCase()} ${f.kode}${f.nama ? ` (${f.nama})` : ''} pada survei pemetaan habitat. Habitat yang sudah dipilih surveyor: ${asList(f.habitat).length ? habLabel(f.habitat) : 'belum dipilih'}. Kegiatan: ${S.profile.proyek || '-'}. Isi deskripsi habitat lokasi ini dan catatan temuan dari foto.`,
+    done: () => {
+      f.updated = Date.now(); save();
+      if (SHEET === f.id) ['deskripsi', 'catatan'].forEach(k => { const el = document.querySelector(`#sheetBody [data-k="${k}"]`); if (el) el.value = f[k] || ''; });
+      if (currentTab === 'list') renderList();
+    },
+  };
+}
+function aiRedraw() { if (currentTab === 'data') renderData(); }
+
 /* ================= Pasang sebagai aplikasi =================
    Chrome/Edge/Samsung Internet mengirim beforeinstallprompt bila syarat instalasi terpenuhi;
    tombol Pasang memunculkan dialog instal resmi sehingga aplikasi masuk daftar aplikasi HP. */
@@ -2220,7 +2429,7 @@ window.addEventListener('beforeunload', ev => { if (REC) { save(); ev.preventDef
   applyTheme(); updateNet(); $('projName').textContent = S.profile.proyek || 'Pemetaan lapangan';
   MAPS = await pdbAll('maps').catch(() => []);
   setBase(base.kind);
-  drawAll(); drawRefs(false); startWatch(); updateHud();
+  drawAll(); drawRefs(false); startWatch(); updateHud(); aiRun();
   try {
     const tab = sessionStorage.getItem('peta-survei-tab'); sessionStorage.removeItem('peta-survei-tab');
     showTab(tab || pref('tab', MAPS.length ? 'lib' : 'map'));
