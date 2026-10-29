@@ -169,6 +169,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent); outline
 .list { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
 .item { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border: 0; border-top: 1px solid var(--line); background: none; text-align: left; width: 100%; cursor: pointer; min-height: 56px; color: var(--fg); flex-wrap: wrap; }
 .item:first-child { border-top: 0; }
+.item.armed { background: var(--accent-soft); } .item.armed .k { color: var(--accent); font-weight: 700; }
 .item .main { flex: 1; min-width: 0; } .item .t { font-weight: 650; } .item .s { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
 .item .k { font-family: var(--font-data); font-size: 12px; color: var(--muted); white-space: nowrap; }
 .empty { border: 1px dashed var(--line); border-radius: var(--r); padding: 16px; text-align: center; color: var(--muted); font-size: 14px; }
@@ -349,7 +350,7 @@ const DEFAULT_VIEW = { lat: -2.5, lon: 118, z: 5 };   // seluruh Indonesia; peta
 /* ================= Penyimpanan ================= */
 const KEY = 'peta-survei-v1';
 let S = load();
-function blank() { return { v: 1, profile: { nama: '', proyek: '' }, features: {}, seq: { point: 0, line: 0, area: 0 }, layers: [{ id: 'L1', name: 'Lapisan 1', visible: true }], activeLayer: 'L1' }; }
+function blank() { return { v: 1, profile: { nama: '', proyek: '' }, features: {}, seq: { point: 0, line: 0, area: 0 }, layers: [{ id: 'L1', name: 'Lapisan 1', visible: true }], activeLayer: 'L1', deleted: {} }; }
 function load() { try { const r = localStorage.getItem(KEY); if (r) { const o = Object.assign(blank(), JSON.parse(r)); o.profile = Object.assign(blank().profile, o.profile); if (o.profile.proyek === 'KEE Mangrove Pantai Cemara') o.profile.proyek = ''; fixLayers(o); return o; } } catch (e) {} return blank(); }
 /* Lapisan objek (seperti "layer" di Avenza): objek lama tanpa lapisan otomatis masuk lapisan pertama. */
 function fixLayers(o) {
@@ -1066,8 +1067,9 @@ function renderSheet() {
         <button type="button" class="btn ghost sm" data-s="center">Lihat di peta</button>
         <button type="button" class="btn ghost sm" data-s="nav">Navigasi ke sini</button>
         <button type="button" class="btn ghost sm" data-s="edit">${f.type === 'point' ? 'Geser titik' : 'Ubah bentuk'}</button>
+        ${f.type === 'point' && Object.values(S.features).some(x => x.type === 'point' && x.id !== f.id) ? '<button type="button" class="btn ghost sm" data-s="replace">Gantikan titik lama</button>' : ''}
         ${f.type === 'point' ? '<button type="button" class="btn ghost sm" data-s="regps">Ambil ulang GPS</button>' : `<button type="button" class="btn ghost sm" data-s="swap">Jadikan ${f.type === 'line' ? 'area' : 'garis'}</button>`}
-      </div></div>
+      </div><div id="replBox"></div></div>
     <div class="fields">
       ${S.layers.length > 1 ? `<div class="field w"><span class="lbl">Lapisan</span>${chipsHTML('layer', S.layers.map(l => [l.id, l.name]), layerOf(f), false)}</div>` : ''}
       <div class="field w"><span class="lbl">Habitat <span class="hint">(bisa lebih dari satu; warna di peta mengikuti yang dipilih pertama)</span></span>${chipsHTML('habitat', HABITAT, asList(f.habitat), true, true)}</div>
@@ -1117,6 +1119,13 @@ sheetBody.addEventListener('click', async ev => {
   else if (a === 'nav') startNav(f.id);
   else if (a === 'edit') startEdit(f.id);
   else if (a === 'regps') { const id = f.id; closeSheet(); showTab('map'); gpsAverage(id); }
+  else if (a === 'replace') { renderReplace(f); }
+  else if (a === 'replcancel') { $('replBox').innerHTML = ''; }
+  else if (a === 'replpick') {
+    const old = S.features[b.dataset.id]; if (!old) return;
+    if (armed !== 'repl' + old.id) { armed = 'repl' + old.id; $('replBox').querySelectorAll('[data-s=replpick]').forEach(x => x.classList.remove('armed')); b.classList.add('armed'); b.querySelector('.k').textContent = 'Ketuk lagi'; return; }
+    armed = null; replaceInto(old.id, f);
+  }
   else if (a === 'swap') { f.type = f.type === 'line' ? 'area' : 'line'; f.updated = Date.now(); save(); drawFeature(f); renderSheet(); }
   else if (a === 'cam') { QUICK = null; $('camIn').click(); }
   else if (a === 'gal') { QUICK = null; $('galIn').click(); }
@@ -1124,7 +1133,7 @@ sheetBody.addEventListener('click', async ev => {
   else if (a === 'del') {
     if (armed !== 'del') { armed = 'del'; b.classList.add('armed'); b.textContent = 'Ketuk lagi untuk menghapus'; setTimeout(() => { if (armed === 'del') { armed = null; b.classList.remove('armed'); b.textContent = `Hapus ${TIPE[f.type].toLowerCase()} ini`; } }, 3500); return; }
     armed = null;
-    await deletePhotos(f._photos); delete S.features[f.id]; save();
+    await deletePhotos(f._photos); delete S.features[f.id]; S.deleted[f.id] = Date.now(); save();
     if (layers[f.id]) { featLayer.removeLayer(layers[f.id]); delete layers[f.id]; }
     if (NAV && NAV.id === f.id) stopNav();
     renderLegend(); closeSheet(); if (currentTab === 'list') renderList(); toast('Objek dihapus');
@@ -1601,16 +1610,59 @@ async function exportZip(share) {
 function exportSHP() { if (!needData()) return; shareOrDownload(makeZip(shpFiles('')), fileBase() + '_shp.zip', true); }
 async function exportKMZ() { if (!needData()) return; save(); const photos = await photoFiles(); shareOrDownload(makeZip([['doc.kml', toKML(true)], ...photos], 'application/vnd.google-earth.kmz'), fileBase() + '.kmz', true); }
 
+/* ================= Titik baru menggantikan titik lama =================
+   Untuk lokasi yang sama ditandai ulang: titik lama mempertahankan kode, lapisan, dan riwayatnya, tetapi
+   koordinatnya diganti titik baru (lokasi lama tidak dipakai lagi). Isian dan foto titik baru ikut dibawa;
+   titik baru lalu dihapus agar tidak ada objek ganda. */
+function renderReplace(nw) {
+  const cand = Object.values(S.features).filter(x => x.type === 'point' && x.id !== nw.id)
+    .map(x => ({ x, d: hav(nw.coords, x.coords) })).sort((a, b) => a.d - b.d).slice(0, 25);
+  $('replBox').innerHTML = `<div class="section" style="margin-top:12px">
+    <h2>Pilih titik lama yang digantikan</h2>
+    <p class="note">Titik lama tetap memakai kodenya, tetapi lokasinya pindah ke titik ini (${esc(nw.kode)}); lokasi lamanya tidak dipakai lagi. Isian dan foto ${esc(nw.kode)} ikut dipindah, lalu ${esc(nw.kode)} dihapus.</p>
+    <div class="list">${cand.map(({ x, d }) => `<button type="button" class="item" data-s="replpick" data-id="${x.id}">
+      <svg class="i" style="color:${habColor(x.habitat)}"><use href="#i-pt"/></svg>
+      <span class="main"><span class="t">${esc(x.kode)}${x.nama ? ' · ' + esc(x.nama) : ''}</span><br><span class="s">${esc(habLabel(x.habitat))}${x._photos ? ` · ${x._photos.length} foto` : ''}</span></span>
+      <span class="k">${fmtLen(d)}</span></button>`).join('')}</div>
+    <button type="button" class="btn ghost block" data-s="replcancel">Batal</button></div>`;
+  $('replBox').scrollIntoView({ block: 'nearest' });
+}
+function replaceInto(oldId, nw) {
+  const old = S.features[oldId]; if (!old || !nw || old.id === nw.id) return;
+  old.coords = nw.coords.slice(); old.src = nw.src;
+  if (nw.gps) old.gps = nw.gps; else delete old.gps;
+  ['nama', 'kondisi', 'vegetasi', 'deskripsi', 'catatan'].forEach(k => { if (nw[k]) old[k] = nw[k]; });
+  if (asList(nw.habitat).length) old.habitat = nw.habitat;
+  if ((nw.ancaman || []).length) old.ancaman = nw.ancaman;
+  if (nw._photos && nw._photos.length) {
+    old._photos = old._photos || [];
+    nw._photos.forEach(ph => {   // nama foto memakai kode titik lama
+      const stem = ph.name.replace(/\.jpg$/i, '').replace(new RegExp('^' + String(nw.kode).replace(/[^\w-]+/g, '_').replace(/[-]/g, '\\-') + '_'), String(old.kode).replace(/[^\w-]+/g, '_') + '_');
+      let name = stem, k = 1; while (old._photos.some(p => p.name === name + '.jpg')) name = stem + '_' + (++k);
+      old._photos.push({ ...ph, name: name + '.jpg' });
+    });
+  }
+  old.updated = Date.now();
+  delete S.features[nw.id]; S.deleted[nw.id] = Date.now();
+  if (layers[nw.id]) { featLayer.removeLayer(layers[nw.id]); delete layers[nw.id]; }
+  if (NAV && NAV.id === nw.id) stopNav();
+  save(); drawFeature(old); renderLegend(); openSheet(old.id);
+  toast(`${old.kode} kini memakai lokasi baru; ${nw.kode} digabung ke ${old.kode}.`);
+}
+
 /* ================= Impor ================= */
 $('importIn').addEventListener('change', ev => {
   const file = ev.target.files[0]; ev.target.value = ''; if (!file) return;
   file.text().then(txt => {
     const o = JSON.parse(txt), d = o.data || o; if (!d.features) throw new Error('format');
-    let add = 0, upd = 0;
-    Object.values(d.features).forEach(f => { const cur = S.features[f.id]; if (!cur) { S.features[f.id] = f; add++; } else if ((f.updated || 0) > (cur.updated || 0)) { S.features[f.id] = f; upd++; } });
+    let add = 0, upd = 0, del = 0;
+    // Objek yang sudah dihapus atau digantikan (di HP ini atau HP lain) tidak dimunculkan lagi.
+    Object.entries(d.deleted || {}).forEach(([id, t]) => { S.deleted[id] = Math.max(S.deleted[id] || 0, t); });
+    Object.values(d.features).forEach(f => { if (S.deleted[f.id] && (f.updated || 0) <= S.deleted[f.id]) return; const cur = S.features[f.id]; if (!cur) { S.features[f.id] = f; add++; } else if ((f.updated || 0) > (cur.updated || 0)) { S.features[f.id] = f; upd++; } });
+    Object.keys(S.features).forEach(id => { if (S.deleted[id] && (S.features[id].updated || 0) <= S.deleted[id]) { delete S.features[id]; del++; } });
     ['point', 'line', 'area'].forEach(t => { S.seq[t] = Math.max(S.seq[t] || 0, (d.seq && d.seq[t]) || 0); });
     (d.layers || []).forEach(l => { if (l && l.id && !S.layers.some(x => x.id === l.id)) S.layers.push({ id: l.id, name: l.name || l.id, visible: true }); });
-    save(); drawAll(); renderData(); toast(`Digabung: ${add} objek baru, ${upd} diperbarui`);
+    save(); drawAll(); renderData(); toast(`Digabung: ${add} objek baru, ${upd} diperbarui${del ? `, ${del} dihapus/digantikan` : ''}`);
   }).catch(() => toast('File ini bukan cadangan Peta Survei (.json).'));
 });
 function parseRef(text) {
