@@ -7,6 +7,10 @@ const FILES = ['./index.html', './manifest.webmanifest', './icon.svg', './icon-1
 const SCOPE = self.registration.scope;
 const INDEX = new URL('./index.html', SCOPE).href;
 const OWN = new Set(FILES.map((f) => new URL(f, SCOPE).href));
+// Pustaka AI di HP (±22 MB) tidak ikut diunduh saat pasang; baru disimpan ketika pengguna mengunduh model AI.
+// Nama cache memuat versi pustaka, jadi saat pustaka diganti cukup ubah nama ini.
+const AI_CACHE = 'peta-ai-3.8.1';
+const AI_DIR = new URL('./vendor/ai/', SCOPE).href;
 const TILE_HOSTS = ['server.arcgisonline.com', 'tile.openstreetmap.org'];
 
 self.addEventListener('install', (e) => {
@@ -49,6 +53,15 @@ async function tile(req) {
   return res;
 }
 
+async function aiFile(req, key) {
+  const c = await caches.open(AI_CACHE);
+  const hit = await c.match(key);
+  if (hit) return hit;
+  const res = await fetch(req);
+  if (res.ok) await c.put(key, res.clone());
+  return res;
+}
+
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
@@ -56,6 +69,7 @@ self.addEventListener('fetch', (e) => {
   if (TILE_HOSTS.includes(u.hostname)) { e.respondWith(tile(req)); return; }
   if (u.origin !== self.location.origin) return;
   const clean = u.origin + u.pathname;
+  if (clean.startsWith(AI_DIR)) { e.respondWith(aiFile(req, clean)); return; }
   const isApp = req.mode === 'navigate' ? (clean === SCOPE || clean === INDEX) : OWN.has(clean);
   if (!isApp) return;
   const key = req.mode === 'navigate' || clean === SCOPE ? INDEX : clean;
