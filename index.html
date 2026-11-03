@@ -1128,7 +1128,11 @@ sheetBody.addEventListener('click', async ev => {
   }
   else if (a === 'aidesk') {
     if (!(f._photos || []).length) { toast('Ambil foto titik ini dulu.'); return; }
-    if (!aiAvail()) { toast('Unduh dulu model AI gratis di tab Data → AI di HP (sekali, pakai Wi-Fi).'); return; }
+    if (!aiAvail()) {
+      if (!navigator.onLine) { toast('Model AI belum ada di HP. Unduh sekali di tab Data → AI di HP saat ada Wi-Fi.'); return; }
+      if (armed !== 'ailget') { armed = 'ailget'; b.classList.add('armed'); b.textContent = 'Ketuk lagi: unduh model AI gratis (±170 MB)'; return; }
+      armed = null; await ailDownload(); if (SHEET === f.id) renderSheet(); if (!ailReady()) return;
+    }
     aiEnqueue({ fid: f.id }); toast(aiCanRun() ? 'AI sedang membaca foto-foto titik ini…' : 'Masuk antrean; dibaca AI saat ada sinyal.');
   }
   else if (a === 'swap') { f.type = f.type === 'line' ? 'area' : 'line'; f.updated = Date.now(); save(); drawFeature(f); renderSheet(); }
@@ -2315,7 +2319,7 @@ async function aiRun() {
 function aiSectionHTML(attr) {
   const k = aiKey(), n = aiQueue().length, lok = ailReady();
   return `<section class="section" id="aiLokSec"><h2>AI di HP (gratis, tanpa sinyal)</h2>
-      <p class="note">Foto-foto di satu titik dibaca oleh model AI yang tersimpan di HP ini untuk mengisi <b>Deskripsi habitat</b>, <b>Vegetasi</b> (bila masih kosong), dan <b>Catatan</b> (mis. ada sampah). Gratis, foto tidak dikirim ke mana pun, dan bekerja tanpa sinyal. Habitat yang Anda pilih dan vegetasi yang Anda ketik selalu didahulukan. Hasilnya perkiraan kasar (tipe habitat, substrat, vegetasi umum), jadi tetap periksa dan lengkapi.</p>
+      <p class="note">Foto-foto di satu titik dibaca oleh model AI yang tersimpan di HP ini untuk mengisi <b>Deskripsi habitat</b>, <b>Vegetasi</b> (bila masih kosong), dan <b>Catatan</b> (mis. ada sampah). Gratis, foto tidak dikirim ke mana pun, dan bekerja tanpa sinyal. Habitat yang Anda pilih dan vegetasi yang Anda ketik selalu didahulukan. Hasilnya perkiraan kasar (tipe habitat, substrat, vegetasi umum), jadi tetap periksa dan lengkapi. Model yang sama dipakai Survei Cemara di HP ini, jadi cukup diunduh sekali.</p>
       ${lok ? `<p class="note"><b>Model AI sudah tersimpan di HP ini.</b></p><button type="button" class="btn danger" ${attr}="ailrm">Hapus model AI (±170 MB)</button>`
         : `<button type="button" class="btn block" ${attr}="ailget">Unduh model AI (±170 MB, sekali saja, pakai Wi-Fi)</button>`}
       <label class="check"><input type="checkbox" id="aiAuto" ${aiAuto() ? 'checked' : ''}>Baca otomatis setiap foto baru</label>
@@ -2395,7 +2399,8 @@ function aiRedraw() { if (currentTab === 'data') renderData(); }
    (habitat, substrat, vegetasi, genangan, sampah). Nilai dari foto-foto titik dirata-rata, lalu
    dirangkai menjadi kalimat. Habitat dan vegetasi yang dipilih/diketik surveyor selalu didahulukan. */
 const AIL_MODEL = 'Xenova/clip-vit-base-patch32';
-const AIL_FLAG = 'ai-lokal-siap';
+const AIL_FLAG = 'ai-lokal-siap';   // kunci bersama; versi awal Peta Survei memakai awalan nama aplikasi
+const AIL_TPL = ['a photo of {}.', 'a landscape photo of {}.', 'a field survey photo showing {}.'];
 const AIL_GROUPS = {
   hab: [['MG', 'a mangrove forest'], ['MF', 'a muddy tidal mudflat'], ['PP', 'a sandy beach'],
     ['VP', 'coastal vegetation with casuarina trees and pandanus'], ['TB', 'an aquaculture fish pond'], ['SW', 'a rice paddy field'],
@@ -2408,8 +2413,17 @@ const AIL_GROUPS = {
   air: [[1, 'standing water and tidal pools'], [0, 'dry ground']],
   sampah: [[1, 'plastic trash and litter'], [0, 'clean natural surroundings']],
 };
-function ailReady() { try { return localStorage.getItem(AI_APP + '-' + AIL_FLAG) === '1'; } catch (e) { return false; } }
-function ailSetReady(v) { try { if (v) localStorage.setItem(AI_APP + '-' + AIL_FLAG, '1'); else localStorage.removeItem(AI_APP + '-' + AIL_FLAG); } catch (e) {} }
+/* Penanda "model sudah diunduh" dipakai bersama Peta Survei dan Survei Cemara (satu domain, satu cache model). */
+function ailReady() { try { return localStorage.getItem(AIL_FLAG) === '1' || localStorage.getItem(AI_APP + '-' + AIL_FLAG) === '1'; } catch (e) { return false; } }
+function ailSetReady(v) { try { if (v) localStorage.setItem(AIL_FLAG, '1'); else { localStorage.removeItem(AIL_FLAG); localStorage.removeItem(AI_APP + '-' + AIL_FLAG); } } catch (e) {} }
+/* Bila model sudah diunduh (mungkin lewat aplikasi pasangannya), pastikan pustaka AI aplikasi ini juga
+   tersimpan selagi ada sinyal, agar AI tetap jalan saat nanti tanpa sinyal. */
+const AIL_FILES = ['transformers.min.js', 'ort-wasm-simd-threaded.jsep.mjs', 'ort-wasm-simd-threaded.jsep.wasm'];
+function ailWarm() {
+  if (!ailReady() || !navigator.onLine || !self.caches) return;
+  AIL_FILES.forEach(f => { const u = new URL('vendor/ai/' + f, location.href).href; caches.match(u).then(hit => { if (!hit) fetch(u).catch(() => {}); }).catch(() => {}); });
+}
+setTimeout(ailWarm, 5000);
 const ailNorm = v => { let s = 0; for (const x of v) s += x * x; s = Math.sqrt(s) || 1; return Float32Array.from(v, x => x / s); };
 /* Mesin CLIP: { text(prompts) → vektor[], image(blob) → vektor }. Tes otomatis bisa menyuntik window.__ailMock. */
 let ailP = null;
@@ -2446,10 +2460,15 @@ let ailTextP = null;
 function ailTextEmb(m) {
   if (!ailTextP) {
     ailTextP = (async () => {
+      // Beberapa kalimat per keterangan dirata-rata ("prompt ensemble") agar tebakan lebih stabil.
       const keys = [], prompts = [];
-      for (const [g, items] of Object.entries(AIL_GROUPS)) items.forEach(([, p]) => { keys.push(g); prompts.push('a photo of ' + p); });
-      const vecs = await m.text(prompts), out = {};
-      keys.forEach((g, i) => (out[g] = out[g] || []).push(ailNorm(vecs[i])));
+      for (const [g, items] of Object.entries(AIL_GROUPS)) items.forEach(([, p]) => { keys.push(g); AIL_TPL.forEach(t => prompts.push(t.replace('{}', p))); });
+      const vecs = await m.text(prompts), out = {}, n = AIL_TPL.length;
+      keys.forEach((g, i) => {
+        const avg = new Float32Array(vecs[0].length);
+        for (let j = 0; j < n; j++) ailNorm(vecs[i * n + j]).forEach((x, d) => { avg[d] += x; });
+        (out[g] = out[g] || []).push(ailNorm(avg));
+      });
       return out;
     })();
     ailTextP.catch(() => { ailTextP = null; });
@@ -2509,8 +2528,8 @@ async function ailDownload() {
 }
 async function ailRemove() {
   ailP = null; ailTextP = null; ailSetReady(false);
-  try { await caches.delete('transformers-cache'); await caches.delete('peta-ai-3.8.1'); } catch (e) {}
-  toast('Model AI dihapus dari HP ini.'); aiRedraw();
+  try { await caches.delete('transformers-cache'); await caches.delete('peta-ai-3.8.1'); await caches.delete('cemara-ai-3.8.1'); } catch (e) {}
+  toast('Model AI dihapus dari HP ini (juga untuk aplikasi pasangannya).'); aiRedraw();
 }
 
 /* ================= Pasang sebagai aplikasi =================
