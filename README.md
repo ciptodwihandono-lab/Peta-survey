@@ -46,9 +46,11 @@ Di iPhone: Safari → Bagikan → Tambahkan ke Layar Utama.
   (`LAPISAN`), dan folder KML.
 
 **Baca foto dengan AI (Claude)**
-- Setiap foto baru bisa dibaca Claude (Anthropic, model `claude-opus-5-5`) untuk mengisi Deskripsi dan Catatan.
+- Foto-foto satu titik (maks. 4 terbaru) dibaca bersama oleh Claude (Anthropic, model `claude-opus-5-5`) untuk mengisi
+  Deskripsi habitat, Vegetasi (bila kosong), dan Catatan; habitat dan vegetasi yang diketik surveyor dipakai sebagai acuan.
+  Tombol "Isi dari foto (AI)" di lembar objek menjalankannya kapan saja.
   Isian yang sudah diketik tidak ditimpa; teks AI ditambahkan di baris baru dengan awalan "AI:".
-  Hasil AI juga disimpan di data foto (kolom `deskripsi_ai`, `catatan_ai` di `Daftar_Foto.csv`).
+  Hasil AI juga disimpan di data foto (kolom `deskripsi_ai`, `vegetasi_ai`, `catatan_ai` di `Daftar_Foto.csv`).
 - Butuh kunci API Anthropic milik pengguna (tab Data). Kunci hanya disimpan di HP itu, dipakai bersama oleh
   Survei Cemara dan Peta Survei, dan tidak ikut file cadangan.
 - Tanpa sinyal, foto diantrekan lalu dibaca otomatis saat ada sinyal. Foto dikirim diperkecil ke 1280 px.
