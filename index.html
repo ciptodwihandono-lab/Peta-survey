@@ -226,6 +226,7 @@ details.guide ol { padding-left: 20px; margin: 8px 0; display: flex; flex-direct
   <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5-10-5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m2 13 10 5 10-5M2 17.5 12 22l10-4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
   <symbol id="i-loc" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2"/></symbol>
   <symbol id="i-fit" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="m12 5 3 7h-6z" fill="#d33"/><path d="m12 19-3-7h6z" fill="currentColor"/></symbol>
   <symbol id="i-ruler" viewBox="0 0 24 24"><path d="m3 17 14-14 4 4L7 21z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m7 13 2 2M10 10l2 2M13 7l2 2" stroke="currentColor" stroke-width="2"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
   <symbol id="i-rec" viewBox="0 0 24 24"><path d="M4 18c3-6 6 2 9-4s4-6 7-8" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="4" cy="18" r="2" fill="currentColor"/></symbol>
@@ -262,6 +263,7 @@ details.guide ol { padding-left: 20px; margin: 8px 0; display: flex; flex-direct
       <details class="legend" id="legend"><summary>Legenda</summary><ul id="legendList"></ul></details>
     </div>
     <div class="float fabcol" id="rt">
+      <button type="button" class="fab" id="compassBtn" aria-label="Kompas, inklinometer, matahari & bulan"><svg class="i"><use href="#i-compass"/></svg></button>
       <button type="button" class="fab" id="measureBtn" aria-label="Ukur jarak dan luas" aria-pressed="false"><svg class="i"><use href="#i-ruler"/></svg></button>
       <button type="button" class="fab" id="fitBtn" aria-label="Tampilkan semua objek"><svg class="i"><use href="#i-fit"/></svg></button>
       <button type="button" class="fab" id="locBtn" aria-label="Ke posisi saya" aria-pressed="false"><svg class="i"><use href="#i-loc"/></svg></button>
@@ -322,9 +324,11 @@ details.guide ol { padding-left: 20px; margin: 8px 0; display: flex; flex-direct
 <input type="file" id="galIn" accept="image/*" multiple hidden>
 <input type="file" id="importIn" hidden>
 <input type="file" id="refIn" hidden>
+<input type="file" id="gpxIn" accept=".gpx,application/gpx+xml,application/xml,text/xml" hidden>
 <input type="file" id="mapIn" hidden>
 
 <script src="vendor/leaflet.js"></script>
+<script src="vendor/navtools.js"></script>
 <script>
 'use strict';
 // Diisi tanggal dan kode versi oleh workflow GitHub Pages saat diterbitkan.
@@ -418,11 +422,12 @@ function toUTM(lat, lon) {
   return { zone, band, e: 500000 + k0 * A * E, n: k0 * A * N + (lat < 0 ? 10000000 : 0), hemi: lat < 0 ? 'S' : 'N' };
 }
 function dms(v, pos, neg) { const s = v < 0 ? neg : pos; v = Math.abs(v); const d = Math.floor(v), m = Math.floor((v - d) * 60), sec = ((v - d) * 60 - m) * 60; return `${d}°${pad(m)}'${sec.toFixed(2).padStart(5, '0')}"${s}`; }
-const FMT = ['utm', 'dd', 'dms'];
+const FMT = ['utm', 'dd', 'dms', 'mgrs'];
 let coordFmt = pref('fmt', 'utm');
 function fmtCoord(lat, lon, fmt = coordFmt) {
   if (fmt === 'dms') return `${dms(lat, 'U', 'S')} ${dms(lon, 'T', 'B')}`;
   if (fmt === 'utm') { const u = toUTM(lat, lon); return `${u.zone}${u.band} ${Math.round(u.e)} mT ${Math.round(u.n)} mU`; }
+  if (fmt === 'mgrs' && window.NavTools) return NavTools.fmt(lat, lon, 'mgrs');
   return `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
 }
 function stats(f) {
@@ -571,6 +576,7 @@ function startWatch() {
   watchId = navigator.geolocation.watchPosition(p => {
     lastPos = p;
     me = { lat: p.coords.latitude, lon: p.coords.longitude, acc: Math.round(p.coords.accuracy), alt: p.coords.altitude, t: Math.round(p.timestamp / 1000) };
+    if (window.NavTools) NavTools.refresh();
     const ll = [me.lat, me.lon];
     if (!meMarker) {
       meCircle = L.circle(ll, { radius: me.acc, color: '#1a73e8', weight: 1, fillColor: '#1a73e8', fillOpacity: .12, interactive: false }).addTo(map);
@@ -593,7 +599,7 @@ function updateHud() {
   $('hudL').textContent = `Posisi saya · ±${me.acc} m${me.alt != null ? ` · tinggi ${Math.round(me.alt)} m` : ''}`;
   $('hudC').textContent = fmtCoord(me.lat, me.lon);
 }
-const FMT_LABEL = { utm: 'UTM (WGS 84)', dd: 'derajat desimal', dms: 'derajat-menit-detik' };
+const FMT_LABEL = { utm: 'UTM (WGS 84)', dd: 'derajat desimal', dms: 'derajat-menit-detik', mgrs: 'MGRS' };
 $('hud').addEventListener('click', () => { coordFmt = FMT[(FMT.indexOf(coordFmt) + 1) % FMT.length]; setPref('fmt', coordFmt); updateHud(); toast('Format koordinat: ' + FMT_LABEL[coordFmt]); });
 function goToMe() { startWatch(); if (me) map.setView([me.lat, me.lon], Math.max(map.getZoom(), 17)); else toast('Mencari sinyal GPS…'); }
 $('gpsChip').addEventListener('click', () => { showTab('map'); goToMe(); });
@@ -795,6 +801,17 @@ function startNav(id) { const st = stats(S.features[id]); startNavTo({ id }, st.
 function startNavTo(t, lat, lon) { NAV = t; closeSheet(); showTab('map'); $('navbar').hidden = false; startWatch(); updateNav(); if (me) map.fitBounds(L.latLngBounds([[me.lat, me.lon], [lat, lon]]).pad(0.3), { maxZoom: 18 }); else map.setView([lat, lon], Math.max(map.getZoom(), 16)); }
 function stopNav() { NAV = null; navLayer.clearLayers(); $('navbar').hidden = true; if (updateReady && safeToReload()) applyUpdate(); }
 $('navStop').addEventListener('click', stopNav);
+/* Kompas & navigasi (vendor/navtools.js): kompas + inklinometer, deklinasi WMM, matahari/bulan, format koordinat. */
+function navTarget() {
+  if (!NAV) return null;
+  if (NAV.id) { const f = S.features[NAV.id]; if (!f) return null; const st = stats(f); return { lat: st.lat, lon: st.lon, name: f.kode }; }
+  return { lat: NAV.lat, lon: NAV.lon, name: NAV.label };
+}
+$('compassBtn').addEventListener('click', () => {
+  if (!window.NavTools) { toast('Pustaka kompas belum termuat. Buka aplikasi sekali saat ada sinyal.'); return; }
+  startWatch(); NavTools.setFormat(coordFmt);
+  NavTools.open({ getPos: () => me, target: navTarget, toast, onFormat: f => { if (FMT.includes(f)) { coordFmt = f; setPref('fmt', f); updateHud(); } } });
+});
 function updateNav() {
   if (!NAV) return;
   let tgt, name;
@@ -1384,7 +1401,7 @@ async function renderData() {
     <section class="section"><h2>Ekspor</h2>
       <p class="note">${fs.length} objek (${fs.filter(f => f.type === 'point').length} titik, ${fs.filter(f => f.type === 'line').length} garis, ${fs.filter(f => f.type === 'area').length} area) dan ${ph.length} foto di HP ini. Kirim cadangan setiap malam.</p>
       <div class="row"><button type="button" class="btn" data-d="zip-share">Bagikan paket lengkap</button><button type="button" class="btn ghost" data-d="zip">Simpan paket lengkap</button></div>
-      <div class="row"><button type="button" class="btn ghost" data-d="shp">Shapefile</button><button type="button" class="btn ghost" data-d="kmz">KMZ Google Earth</button><button type="button" class="btn ghost" data-d="json">Cadangan .json</button></div>
+      <div class="row"><button type="button" class="btn ghost" data-d="shp">Shapefile</button><button type="button" class="btn ghost" data-d="kmz">KMZ Google Earth</button><button type="button" class="btn ghost" data-d="json">Cadangan .json</button><button type="button" class="btn ghost" data-d="gpx">GPX</button></div>
       <label class="check"><input type="checkbox" id="withPhotos" ${withPhotos() ? 'checked' : ''}>Sertakan foto (${ph.length} foto, ±${fmtMB(ph.reduce((a, p) => a + (p.size || 0), 0))})</label>
       <p class="note">Paket lengkap (ZIP) berisi Shapefile (titik, garis, area; WGS 84), GeoJSON, KML, GPX, CSV dengan kolom UTM, folder foto dengan Daftar_Foto.csv, dan cadangan .json. Langsung terbuka di QGIS dan ArcGIS.</p>
     </section>
@@ -1398,6 +1415,7 @@ async function renderData() {
       <p class="note">Batas kawasan, rencana jalur, atau titik lama dari GeoJSON, KML, atau GPX; tampil sebagai garis putus-putus kuning dan tidak ikut diekspor.</p>
       ${refs.length ? `<div class="list">${refs.map(r => `<div class="item" style="cursor:default"><span class="main"><span class="t">${esc(r.name)}</span><br><span class="s">${r.geojson.features.length} objek</span></span><button type="button" class="btn danger sm" data-d="refdel" data-id="${r.id}">Hapus</button></div>`).join('')}</div>` : ''}
       <button type="button" class="btn ghost block" data-d="refadd">+ Tambah layer acuan</button>
+      <button type="button" class="btn ghost block" data-d="gpximp">Impor GPX sebagai objek (titik, jalur, rute)</button>
     </section>
     <section class="section"><h2>Gabungkan data tim</h2>
       <p class="note">Pilih cadangan .json dari HP anggota lain. Objek yang sama tidak terduplikasi; versi terbaru yang dipakai.</p>
@@ -1436,6 +1454,8 @@ dataPage.addEventListener('click', async ev => {
   else if (a === 'json') download(new Blob([backupJSON()], { type: 'application/json' }), fileBase() + '.json');
   else if (a === 'import') $('importIn').click();
   else if (a === 'refadd') $('refIn').click();
+  else if (a === 'gpx') download(new Blob([toGPX()], { type: 'application/gpx+xml' }), fileBase() + '.gpx');
+  else if (a === 'gpximp') $('gpxIn').click();
   else if (a === 'lib') showTab('lib');
   else if (a === 'refdel') { await pdbDel('ref', b.dataset.id); await drawRefs(); renderData(); toast('Layer acuan dihapus'); }
   else if (a === 'tilesclear') { if ('caches' in window) await caches.delete('peta-tiles'); renderData(); toast('Simpanan peta online dikosongkan'); }
@@ -1715,6 +1735,22 @@ function parseRef(text) {
   if (!feats.length) throw new Error('kosong');
   return { type: 'FeatureCollection', features: feats };
 }
+/* GPX → objek: waypoint menjadi titik, track/rute menjadi garis (bisa diedit, ikut diekspor). */
+$('gpxIn').addEventListener('change', async ev => {
+  const file = ev.target.files[0]; ev.target.value = ''; if (!file) return;
+  try {
+    const g = NavTools.parseGPX(await file.text());
+    const tsec = p => p.time ? Math.round(Date.parse(p.time) / 1000) : null;
+    let n = 0;
+    g.wpts.forEach(p => { newFeature('point', [+p.lat.toFixed(7), +p.lon.toFixed(7), null], { nama: p.name || '', catatan: [p.desc, `Impor GPX ${file.name}`].filter(Boolean).join('\n'), ...(tsec(p) ? { t: tsec(p) } : {}) }); n++; });
+    [...g.trks.flatMap(t => t.segs.map(s => [t, s])), ...g.rtes.map(r => [r, r.pts])].forEach(([t, pts]) => {
+      if (pts.length < 2) return;
+      newFeature('line', pts.map(p => [+p.lat.toFixed(7), +p.lon.toFixed(7), null, tsec(p)]), { nama: t.name || '', catatan: [t.desc, `Impor GPX ${file.name}`].filter(Boolean).join('\n') }); n++;
+    });
+    toast(n ? `${n} objek diimpor dari GPX (${g.wpts.length} titik, ${g.trks.length} jalur, ${g.rtes.length} rute)` : 'GPX tidak berisi titik/jalur.');
+    if (n) { renderLegend(); showTab('map'); setTimeout(() => $('fitBtn').click(), 200); }
+  } catch (e) { toast('File GPX tidak bisa dibaca.'); }
+});
 $('refIn').addEventListener('change', ev => {
   const file = ev.target.files[0]; ev.target.value = ''; if (!file) return;
   file.text().then(async txt => {
